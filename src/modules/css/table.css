@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.7.4
+ * Version: 0.7.5
  * Module: table.css
  * Description: 表格组件样式 - 统一边框折叠、背景色挂载与 sticky 多方向冻结层级
  * Copyright (c) 2026 Bingo工作室
@@ -210,12 +210,11 @@
     display: block;
 }
 
-/* 长文本 hover 展开：保持3行高度，省略号消失，可滚动查看完整内容。
- * max-height 略增 8px 容纳横向滚动条空间，overflow:auto 启用滚动。
- * 悬浮于相邻单元格之上，避免被遮挡。
- * 用 hover 代替 focus，鼠标移入即展开，移出即收起。 */
+/* 长文本 hover 展开：保持与默认相同的3行高度，省略号消失，可滚动查看完整内容。
+ * max-height 与 .CUI-table tbody td 保持一致，避免 hover 时框变大。
+ * overflow:auto 启用滚动，滚动条在内容区域内不增加尺寸。 */
 .CUI-table .CUI-td-long:hover {
-    max-height: calc(1.5em * 3 + var(--size-sm) * 2 + 8px);
+    max-height: calc(1.5em * 3 + var(--size-sm) * 2);
     overflow: auto;
     position: relative;
     z-index: 20;

@@ -241,3 +241,13 @@
   - Node 单元测试 `23 通过 / 0 失败`。
   - Playwright 排序三态验证 `/tmp/table_sort_verify2.py` 输出 `13 通过 / 0 失败`：用 ID 字段（唯一值）测试，升序前3=[1,2,3]、降序前3=[150,149,148]、取消恢复[1,2,3]、循环回升序[1,2,3]。
 - **状态**: 排序三态切换完成，点击表头在升序/降序/取消之间循环切换。
+
+### [2026-06-26 修复长文本hover展开框尺寸变化bug]
+- **操作人**: Trae
+- **操作内容**: 修复长文本 hover 展开时框变大的问题。
+  - **问题**：hover 时 max-height 比默认多 `+8px`（96px vs 88px），导致框高度变大。
+  - **修复**（`table.css`）：hover 的 `max-height` 去掉 `+8px`，与 `.CUI-table tbody td` 默认值一致（`calc(1.5em * 3 + var(--size-sm) * 2)`）。
+  - 滚动条在内容区域内（clientWidth 内），不需要额外高度空间。
+- **修改文件范围**: `src/modules/css/table.css`（Version 0.7.4 → 0.7.5）
+- **验证**: Playwright 尺寸测量确认 hover 前后 width/height 完全一致（320→320, 88→88），scrollHeight=208 > clientHeight=87 仍可滚动；样式验证 31/31 通过。
+- **状态**: 修复完成，hover 展开框尺寸与默认一致。
