@@ -212,12 +212,11 @@
 
 /* 长文本 hover 展开：保持与默认相同的3行高度，省略号消失，可滚动查看完整内容。
  * max-height 与 .CUI-table tbody td 保持一致，避免 hover 时框变大。
- * overflow:auto 启用滚动，滚动条在内容区域内不增加尺寸。 */
+ * overflow:auto 启用滚动，滚动条在内容区域内不增加尺寸。
+ * 不设 position/z-index，保持正常布局位置不悬浮。 */
 .CUI-table .CUI-td-long:hover {
     max-height: calc(1.5em * 3 + var(--size-sm) * 2);
     overflow: auto;
-    position: relative;
-    z-index: 20;
     background-color: var(--bg-color) !important;
     outline: 2px solid var(--primary-color);
     outline-offset: -2px;
