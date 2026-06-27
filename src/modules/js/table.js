@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.7.3
+ * Version: 0.7.5
  * Module: table.js
  * Description: 数据表格组件 - 标准化分层架构、数据与视图分离、双向实时同步
  * Architecture: 注册表 + 数据层 + 渲染层 + 初始化模块 四合一
@@ -127,6 +127,8 @@ class CUITableRegistry {
     addSortRule(tableId, rule) {
         const entry = this._store.get(tableId);
         if (!entry) return false;
+        /* 先移除同字段的旧规则，避免同字段累积多条规则 */
+        entry.sortRules = entry.sortRules.filter(r => r.field !== rule.field);
         if (entry.sortRules.length >= 10) {
             console.error('[CUITableRegistry] 排序规则超过10条上限');
             return false;
@@ -135,6 +137,19 @@ class CUITableRegistry {
         entry.updateTime = Date.now();
         this._store.set(tableId, entry);
         this._notify(tableId, 'sort');
+        return true;
+    }
+
+    removeSortRule(tableId, field) {
+        const entry = this._store.get(tableId);
+        if (!entry) return false;
+        const before = entry.sortRules.length;
+        entry.sortRules = entry.sortRules.filter(r => r.field !== field);
+        if (entry.sortRules.length !== before) {
+            entry.updateTime = Date.now();
+            this._store.set(tableId, entry);
+            this._notify(tableId, 'sort');
+        }
         return true;
     }
 
@@ -432,6 +447,13 @@ class TableDataLayer {
         if (!this.registry.addSortRule(tableId, rule)) {
             return { code: -1, msg: '规则超过10条上限' };
         }
+        this.recalculate(tableId);
+        const entry = this.registry.get(tableId);
+        return { code: 0, total: entry.filteredData.length, sortRules: entry.sortRules };
+    }
+
+    unsort(tableId, field) {
+        this.registry.removeSortRule(tableId, field);
         this.recalculate(tableId);
         const entry = this.registry.get(tableId);
         return { code: 0, total: entry.filteredData.length, sortRules: entry.sortRules };
@@ -1165,16 +1187,25 @@ class TableInit {
 
             const field = th.getAttribute('data-field') || th.textContent.trim();
             const currentRules = entry.sortRules.filter(r => r.field === field);
-            
-            let order = 'asc';
-            if (currentRules.length > 0) {
-                order = currentRules[0].order === 'asc' ? 'desc' : 'asc';
-            }
 
-            this.dataLayer.sort(tableId, { field, order });
-            
+            /* 三态循环：无排序 → 升序 → 降序 → 取消排序（无）→ 升序... */
             element.querySelectorAll('thead th').forEach(t => t.classList.remove('CUI-sort-asc', 'CUI-sort-desc'));
-            th.classList.add(order === 'asc' ? 'CUI-sort-asc' : 'CUI-sort-desc');
+
+            if (currentRules.length === 0) {
+                /* 无 → 升序 */
+                this.dataLayer.sort(tableId, { field, order: 'asc' });
+                th.classList.add('CUI-sort-asc');
+            } else if (currentRules[0].order === 'asc') {
+                /* 升序 → 降序 */
+                this.dataLayer.sort(tableId, { field, order: 'desc' });
+                th.classList.add('CUI-sort-desc');
+            } else {
+                /* 降序 → 取消排序 */
+                this.dataLayer.unsort(tableId, field);
+                /* 清除 class 后不加新 class，恢复默认 ↕ 图标 */
+            }
+            /* 排序变更后重新渲染 tbody，反映排序结果 */
+            this.render();
         });
     }
 
@@ -1250,6 +1281,10 @@ class Table {
 
     sort(tableId, rule) {
         return this.dataLayer.sort(tableId, rule);
+    }
+
+    unsort(tableId, field) {
+        return this.dataLayer.unsort(tableId, field);
     }
 
     search(tableId, keyword, field = 'all', mode = 'fuzzy') {

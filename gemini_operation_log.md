@@ -218,3 +218,26 @@
   - `src/modules/css/table.css`（Version 0.7.3 → 0.7.4）
 - **验证**: Playwright 样式验证 `/tmp/table_style_verify4.py` 输出 `31 通过 / 0 失败`：身份证号 min-width=208px(13em)、td/th 对齐(208=208)、居中、18位完整显示；手机号/日期同理；长文本 hover 展开正常。
 - **状态**: 列宽改用 em 单位完成，idcard/phone/date/datetime 居中显示，字体大小自适应。
+
+### [2026-06-26 排序三态切换：升序→降序→取消→升序循环]
+- **操作人**: Trae
+- **操作内容**: 按用户需求将排序从两态（升序↔降序）改为三态循环切换（升序→降序→取消排序→升序...）。
+  1. **registry 新增 removeSortRule 方法**（`table.js`）：
+     - 移除指定字段的排序规则，触发 'sort' 事件。
+  2. **registry.addSortRule 修复隐患**：
+     - 添加规则前先移除同字段的旧规则，避免同字段累积多条规则（之前每次 push 会导致重复）。
+  3. **dataLayer 新增 unsort 方法**：
+     - 调用 registry.removeSortRule + recalculate，返回更新后的 sortRules。
+  4. **Table 主类暴露 unsort API**：
+     - `CUI.table.unsort(tableId, field)` 供外部调用。
+  5. **_bindSortEvents 三态切换逻辑**（`table.js` L1177-1208）：
+     - 无规则 → 升序（addSortRule + CUI-sort-asc）
+     - 升序 → 降序（addSortRule + CUI-sort-desc）
+     - 降序 → 取消排序（unsort，清除 class，恢复默认 ↕ 图标）
+     - 排序变更后调用 this.render() 重新渲染 tbody 反映排序结果
+- **修改文件范围**:
+  - `src/modules/js/table.js`（Version 0.7.4 → 0.7.5）
+- **验证**:
+  - Node 单元测试 `23 通过 / 0 失败`。
+  - Playwright 排序三态验证 `/tmp/table_sort_verify2.py` 输出 `13 通过 / 0 失败`：用 ID 字段（唯一值）测试，升序前3=[1,2,3]、降序前3=[150,149,148]、取消恢复[1,2,3]、循环回升序[1,2,3]。
+- **状态**: 排序三态切换完成，点击表头在升序/降序/取消之间循环切换。
