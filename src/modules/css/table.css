@@ -1,6 +1,6 @@
-/* 
+/*
  * Casting UI Framework
- * Version: 0.6.0
+ * Version: 0.7.3
  * Module: table.css
  * Description: 表格组件样式 - 统一边框折叠、背景色挂载与 sticky 多方向冻结层级
  * Copyright (c) 2026 Bingo工作室
@@ -93,36 +93,99 @@
 
 /* ============================================================
  * 表格主体与单元格尺寸限制
+ * 采用 flex 行布局实现原生表格行高控制
  * ============================================================ */
 
 .CUI-table {
     width: 100%;
     min-width: 100%;
-    table-layout: fixed;
-    /* 采用独立边框，防止滚动时边框塌陷漏缝 */
-    border-collapse: separate;
-    border-spacing: 0;
     font-size: var(--font-size-sm);
     background: var(--bg-color);
 }
 
-.CUI-table th,
-.CUI-table td {
+/* thead/tbody/tfoot 作为块级容器，tr 作为 flex 容器 */
+.CUI-table thead,
+.CUI-table tbody,
+.CUI-table tfoot {
+    display: block;
+    width: 100%;
+}
+
+.CUI-table tr {
+    display: flex;
+    width: 100%;
+}
+
+/* th 保持 block：表头内容填满行高，省略号三件套直接生效 */
+.CUI-table th {
+    display: block;
+    flex-shrink: 0;
     padding: var(--size-sm) var(--size-md);
-    /* 显式在单元格挂载背景色，解决 sticky 漏色 */
     background-color: var(--bg-color);
     border-right: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
-    vertical-align: middle;
     box-sizing: border-box;
     line-height: 1.5em;
-
-    /* 严格限制单元格最大尺寸 */
     max-width: 320px;
-    max-height: 5.5em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* td 改为 flex：align-items:center 实现单元格内垂直居中。
+ * 省略号三件套下沉到内层 .CUI-cell-text（flex 匿名 item 不渲染省略号）。 */
+.CUI-table td {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: var(--size-sm) var(--size-md);
+    background-color: var(--bg-color);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    box-sizing: border-box;
+    line-height: 1.5em;
+    max-width: 320px;
+    overflow: hidden;
+}
+
+/* 内层文本容器：短文本横向滚动防溢出（如身份证号长位数字）。
+ * display:block 在 flex 父容器中作为 flex item，min-width:0 允许收缩。
+ * 横向溢出时出现滚动条而非省略号，保留内容完整可读。 */
+.CUI-cell-text {
+    display: block;
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+/* 长文本内层容器：3行截断 + 省略号（覆盖短文本横向滚动规则）。
+ * -webkit-line-clamp 实现3行省略号，white-space:normal 允许换行。 */
+.CUI-td-long .CUI-cell-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+}
+
+/* 默认行高限制：通过 td max-height 控制（flex 布局下生效） */
+.CUI-table tbody td {
+    max-height: calc(1.5em * 3 + var(--size-sm) * 2);
+    overflow: hidden;
+}
+
+/* 自动行高模式：附加在 table 标签上，释放行高限制，由内容自然撑起。
+ * 长文本在 autoheight 下也释放3行截断，完整显示。 */
+.CUI-table-autoheight tbody td {
+    max-height: none;
+    overflow: visible;
+}
+
+.CUI-table-autoheight .CUI-td-long .CUI-cell-text {
+    -webkit-line-clamp: unset;
+    overflow: visible;
 }
 
 /* 斑马纹行显色配置 */
@@ -140,17 +203,38 @@
     background-color: var(--gray-300) !important;
 }
 
-/* 长文本字段专用：覆盖默认 nowrap，允许换行并 max-height 内滚动 */
-.CUI-td-long {
-    white-space: normal !important;
+/* 长文本字段：覆盖 td 的 flex 为 block（长文本不垂直居中），
+ * 默认3行省略号由内层 .CUI-cell-text 的 -webkit-line-clamp 承载。
+ * 选择器提升为 .CUI-table .CUI-td-long 以覆盖 .CUI-table td 的 display:flex */
+.CUI-table .CUI-td-long {
+    display: block;
+}
+
+/* 长文本 hover 展开：保持3行高度，省略号消失，可滚动查看完整内容。
+ * max-height 略增 8px 容纳横向滚动条空间，overflow:auto 启用滚动。
+ * 悬浮于相邻单元格之上，避免被遮挡。
+ * 用 hover 代替 focus，鼠标移入即展开，移出即收起。 */
+.CUI-table .CUI-td-long:hover {
+    max-height: calc(1.5em * 3 + var(--size-sm) * 2 + 8px);
+    overflow: auto;
+    position: relative;
+    z-index: 20;
+    background-color: var(--bg-color) !important;
+    outline: 2px solid var(--primary-color);
+    outline-offset: -2px;
+}
+
+/* hover 时内层文本释放3行截断，内容完整渲染，由 td 的 overflow:auto 滚动查看 */
+.CUI-table .CUI-td-long:hover .CUI-cell-text {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    white-space: normal;
     word-break: break-word;
-    overflow-y: auto;
-    vertical-align: top;
-    max-height: 5.5em; /* 约 4 行文本的高度 */
 }
 
 /* 状态展示 */
 .CUI-table-empty {
+    flex: 1;
     text-align: center;
     padding: var(--size-xl) !important;
     color: var(--text-light);
@@ -205,6 +289,7 @@
  * ============================================================ */
 
 .CUI-table tfoot td {
+    flex: 1;
     font-weight: 600;
     background-color: var(--bg-gray);
     border-top: 2px solid var(--border-color);
@@ -293,11 +378,15 @@
  * 数据类型与敏感掩码样式
  * ============================================================ */
 
-/* 数字居右对齐 */
+/* 数字居右对齐（flex 下用 justify-content，span 内用 text-align） */
 .CUI-td-number {
-    text-align: right !important;
+    justify-content: flex-end;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+}
+
+.CUI-td-number .CUI-cell-text {
+    text-align: right;
 }
 
 /* ============================================================
@@ -325,14 +414,14 @@
 
 .CUI-table th[data-type="phone"],
 .CUI-table td[data-type="phone"] {
-    width: 140px;
-    min-width: 120px;
+    width: 160px;
+    min-width: 140px;
 }
 
 .CUI-table th[data-type="idcard"],
 .CUI-table td[data-type="idcard"] {
-    width: 200px;
-    min-width: 180px;
+    width: 240px;
+    min-width: 220px;
 }
 
 .CUI-table th[data-type="email"],
@@ -366,22 +455,22 @@
     text-align: center;
 }
 
+.CUI-table td[data-type="image"] {
+    justify-content: center;
+}
+
 .CUI-table th[data-type="password"],
 .CUI-table td[data-type="password"] {
     width: 160px;
     min-width: 120px;
 }
 
-/* 长文本字段：不做强制换行裁剪，max-height + overflow: auto 保障最大高度 */
+/* 长文本字段列宽（省略号与展开由 .CUI-td-long / .CUI-cell-text 接管） */
 .CUI-table th[data-type="text-long"],
 .CUI-table td[data-type="text-long"] {
     width: 280px;
     min-width: 200px;
     max-width: 400px;
-    white-space: normal;
-    word-break: break-word;
-    overflow: auto;
-    vertical-align: top;
 }
 
 /* 敏感数据脱敏掩码核心机制 */
@@ -452,16 +541,28 @@
 }
 
 .CUI-currency-amount {
+    display: block;
     font-variant-numeric: tabular-nums;
     text-align: right;
     font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .CUI-table-cell-email,
 .CUI-table-cell-link {
+    display: block;
     color: var(--primary-color);
     text-decoration: none;
     cursor: pointer;
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .CUI-table-cell-email:hover,

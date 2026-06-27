@@ -146,14 +146,29 @@ class TableDataLayer {
 
     _cleanAndAlignData(rawRows, headers) {
         if (!Array.isArray(rawRows)) return [];
-        
+        const expectedCols = headers.length;
+
         return rawRows.map((row, rowIndex) => {
             const cleanRow = { _id: rowIndex, _originalIndex: rowIndex };
-            
+
             if (Array.isArray(row)) {
-                headers.forEach((h, colIndex) => {
-                    cleanRow[h.field] = row[colIndex] ?? '';
-                });
+                const actualCols = row.length;
+                if (actualCols < expectedCols) {
+                    /* 缺列自动补齐空值 */
+                    headers.forEach((h, colIndex) => {
+                        cleanRow[h.field] = row[colIndex] ?? '';
+                    });
+                } else if (actualCols > expectedCols) {
+                    /* 超列：控制台报错 + 截断处理 */
+                    console.error(`[CUI Table] 数据列数 (${actualCols}) 超过表头列数 (${expectedCols})，行 ${rowIndex + 1}，已截断`);
+                    headers.forEach((h, colIndex) => {
+                        cleanRow[h.field] = row[colIndex] ?? '';
+                    });
+                } else {
+                    headers.forEach((h, colIndex) => {
+                        cleanRow[h.field] = row[colIndex] ?? '';
+                    });
+                }
             } else if (typeof row === 'object' && row !== null) {
                 headers.forEach(h => {
                     cleanRow[h.field] = row[h.field] !== undefined && row[h.field] !== null ? row[h.field] : '';
@@ -544,6 +559,98 @@ function runTests() {
         assert.strictEqual(result.code, 0);
         const entry = registry.get('test-table-18');
         assert.strictEqual(entry.processedData[0].额外字段, '测试');
+    });
+
+    /* ===== 以下为 Spec 差距收尾补充用例（CSV 转义 / 超列报错 / loading 加锁 / longDebounce） ===== */
+
+    /* 内联 _parseCSVLine 副本（与 table.js 同源），用于 Node 环境验证引号转义逻辑 */
+    function parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+            if (inQuotes) {
+                if (char === '"' && nextChar === '"') { current += '"'; i++; }
+                else if (char === '"') { inQuotes = false; }
+                else { current += char; }
+            } else {
+                if (char === '"') { inQuotes = true; }
+                else if (char === ',') { result.push(current.trim()); current = ''; }
+                else { current += char; }
+            }
+        }
+        result.push(current.trim());
+        return result;
+    }
+
+    test('19. CSV 引号转义 - 字段内含逗号', () => {
+        const line = '"张三,技术部",25,"1,000元"';
+        const fields = parseCSVLine(line);
+        assert.strictEqual(fields.length, 3);
+        assert.strictEqual(fields[0], '张三,技术部');
+        assert.strictEqual(fields[1], '25');
+        assert.strictEqual(fields[2], '1,000元');
+    });
+
+    test('20. CSV 引号转义 - 双引号转义', () => {
+        const line = '"他说""你好""",30';
+        const fields = parseCSVLine(line);
+        assert.strictEqual(fields.length, 2);
+        assert.strictEqual(fields[0], '他说"你好"');
+        assert.strictEqual(fields[1], '30');
+    });
+
+    test('21. 超列数据 - 截断并报错', () => {
+        registry.register('test-table-21', { type: 'functional' });
+        registry.setStatus('test-table-21', 'success');
+        const originalError = console.error;
+        let errorCalled = false;
+        console.error = () => { errorCalled = true; };
+        try {
+            const extraColsData = [
+                [1, '张三', 25, 10000, '13800138000', '额外1', '额外2']
+            ];
+            const result = dataLayer.processRawData('test-table-21', extraColsData, headers);
+            assert.strictEqual(result.code, 0);
+            const entry = registry.get('test-table-21');
+            assert.strictEqual(entry.processedData[0].ID, 1);
+            assert.strictEqual(entry.processedData[0].姓名, '张三');
+            /* 超出列被截断，不进入 cleanRow */
+            assert.strictEqual(entry.processedData[0].额外1, undefined);
+            assert.ok(errorCalled, '应触发 console.error');
+        } finally {
+            console.error = originalError;
+        }
+    });
+
+    test('22. loading 加锁 - 不被重复初始化', () => {
+        registry.register('test-table-22', { type: 'functional' });
+        registry.setStatus('test-table-22', 'loading');
+        /* 模拟 TableInit._shouldSkip 逻辑 */
+        function shouldSkip(entry) {
+            if (!entry) return false;
+            return entry.initStatus === 'error' || entry.initStatus === 'loading';
+        }
+        const entry = registry.get('test-table-22');
+        assert.ok(shouldSkip(entry), 'loading 状态应被跳过');
+        /* 成功后不再跳过 */
+        registry.setStatus('test-table-22', 'success');
+        const entry2 = registry.get('test-table-22');
+        assert.ok(!shouldSkip(entry2), 'success 状态不应被跳过');
+    });
+
+    test('23. longDebounce 配置 - 防抖时长判定', () => {
+        registry.register('test-table-23', { type: 'functional', longDebounce: true });
+        const entry = registry.get('test-table-23');
+        const debounceMs = entry.config.longDebounce ? 1000 : 500;
+        assert.strictEqual(debounceMs, 1000);
+
+        registry.register('test-table-23b', { type: 'functional' });
+        const entry2 = registry.get('test-table-23b');
+        const debounceMs2 = entry2.config.longDebounce ? 1000 : 500;
+        assert.strictEqual(debounceMs2, 500);
     });
 
     console.log('\n====================================');

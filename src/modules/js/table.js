@@ -1,6 +1,6 @@
-/* 
+/*
  * Casting UI Framework
- * Version: 0.7.0
+ * Version: 0.7.3
  * Module: table.js
  * Description: 数据表格组件 - 标准化分层架构、数据与视图分离、双向实时同步
  * Architecture: 注册表 + 数据层 + 渲染层 + 初始化模块 四合一
@@ -248,14 +248,29 @@ class TableDataLayer {
 
     _cleanAndAlignData(rawRows, headers) {
         if (!Array.isArray(rawRows)) return [];
+        const expectedCols = headers.length;
         
         return rawRows.map((row, rowIndex) => {
             const cleanRow = { _id: rowIndex, _originalIndex: rowIndex };
             
             if (Array.isArray(row)) {
-                headers.forEach((h, colIndex) => {
-                    cleanRow[h.field] = row[colIndex] ?? '';
-                });
+                const actualCols = row.length;
+                if (actualCols < expectedCols) {
+                    /* 缺列自动补齐空值 */
+                    headers.forEach((h, colIndex) => {
+                        cleanRow[h.field] = row[colIndex] ?? '';
+                    });
+                } else if (actualCols > expectedCols) {
+                    /* 超列：控制台报错 + 截断处理 */
+                    console.error(`[CUI Table] 数据列数 (${actualCols}) 超过表头列数 (${expectedCols})，行 ${rowIndex + 1}，已截断`);
+                    headers.forEach((h, colIndex) => {
+                        cleanRow[h.field] = row[colIndex] ?? '';
+                    });
+                } else {
+                    headers.forEach((h, colIndex) => {
+                        cleanRow[h.field] = row[colIndex] ?? '';
+                    });
+                }
             } else if (typeof row === 'object' && row !== null) {
                 headers.forEach(h => {
                     cleanRow[h.field] = row[h.field] !== undefined && row[h.field] !== null ? row[h.field] : '';
@@ -389,6 +404,18 @@ class TableDataLayer {
     }
 
     updateData(tableId, newData, headers) {
+        const entry = this.registry.get(tableId);
+        if (!entry) return { code: -1, msg: '表格未注册' };
+
+        /* Spec §8.7/§11.3 表头一致性校验：字段集变更时清空规则 + 重置分页，
+         * 配合渲染层 headerHash 变化走全量重建路径，避免旧规则引用失效字段。 */
+        const oldFields = (entry.header || []).map(h => h.field).join(',');
+        const newFields = (headers || []).map(h => h.field).join(',');
+        if (oldFields !== '' && oldFields !== newFields) {
+            this.registry.clearRules(tableId);
+            this.registry.setPageState(tableId, { pageNum: 1 });
+        }
+
         return this.processRawData(tableId, newData, headers);
     }
 
@@ -452,6 +479,9 @@ class TableRenderLayer {
         this.originalTfootContent = {};
         this.debounceTimer = null;
         this.lastHeaderHash = '';
+        /* 防抖时长：默认 500ms，配置 longDebounce:true 时为 1000ms */
+        const entry = registry.get(this.tableId);
+        this.debounceMs = (entry?.config?.longDebounce) ? 1000 : 500;
         this.init();
     }
 
@@ -524,7 +554,7 @@ class TableRenderLayer {
 
     _scheduleUpdate() {
         clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(() => this.render(), 500);
+        this.debounceTimer = setTimeout(() => this.render(), this.debounceMs);
     }
 
     _extractHeadersFromDOM() {
@@ -546,8 +576,15 @@ class TableRenderLayer {
 
         const headers = this._extractHeadersFromDOM();
         const headerHash = JSON.stringify(headers.map(h => h.field));
-        
+
         if (headerHash !== this.lastHeaderHash) {
+            /* Spec §7.2：表头变更触发全量重建时，清空历史规则 + 重置分页到第1页。
+             * 守卫 lastHeaderHash !== ''：首次渲染（空hash）不触达，避免破坏
+             * processRawData→setData 已写入的 total/pageCount。 */
+            if (this.lastHeaderHash !== '') {
+                this.registry.clearRules(this.tableId);
+                this.registry.setPageState(this.tableId, { pageNum: 1 });
+            }
             this.lastHeaderHash = headerHash;
             this._fullRebuild(headers, entry);
         } else {
@@ -560,7 +597,7 @@ class TableRenderLayer {
         this._renderFooter(headers, entry);
         this._applyFreezeLayout(headers);
         this._updatePagination(entry);
-        
+
         if (entry.config.type === 'functional') {
             this._injectToolbar();
         }
@@ -597,6 +634,14 @@ class TableRenderLayer {
                 td.setAttribute('data-row-index', row._originalIndex);
                 td.setAttribute('data-value', String(value));
                 if (h.type) td.setAttribute('data-type', h.type);
+
+                /* flex 布局下需显式同步 th 宽度到 td */
+                if (h.element) {
+                    const thInlineWidth = h.element.style.width;
+                    if (thInlineWidth) {
+                        td.style.width = thInlineWidth;
+                    }
+                }
 
                 const cellClasses = [];
                 const isEditable = h.element?.getAttribute('data-editable') === 'true' ||
@@ -835,8 +880,8 @@ class TableRenderLayer {
             case 'number': {
                 const decimals = header.decimals !== undefined ? header.decimals : 0;
                 const num = parseFloat(str);
-                if (isNaN(num)) return escapeHtml(str);
-                return num.toFixed(decimals);
+                if (isNaN(num)) return `<span class="CUI-cell-text">${escapeHtml(str)}</span>`;
+                return `<span class="CUI-cell-text">${num.toFixed(decimals)}</span>`;
             }
             case 'email': {
                 return `<a href="mailto:${escapeHtml(str)}" class="CUI-table-cell-email">${escapeHtml(str)}</a>`;
@@ -848,7 +893,7 @@ class TableRenderLayer {
             case 'image':
                 return `<img src="${escapeHtml(str)}" alt="" style="width:40px;height:40px;border-radius:4px;object-fit:cover;" loading="lazy">`;
             default:
-                return escapeHtml(str);
+                return `<span class="CUI-cell-text">${escapeHtml(str)}</span>`;
         }
     }
 
@@ -908,7 +953,7 @@ class TableInit {
     _shouldSkip(element) {
         if (element.getAttribute('data-table-init') === 'finish') return true;
         const entry = this.registry.get(element.id);
-        if (entry && entry.initStatus === 'error') return true;
+        if (entry && (entry.initStatus === 'error' || entry.initStatus === 'loading')) return true;
         return false;
     }
 
@@ -953,7 +998,8 @@ class TableInit {
             dataSource: parsedConfig.dataSource || element.getAttribute('data-data-source') || '',
             striped: parsedConfig.striped !== false && element.getAttribute('data-striped') !== 'false',
             pageSize: parsedConfig.pageSize || 10,
-            type: parsedConfig.type || 'display'
+            type: parsedConfig.type || 'display',
+            longDebounce: parsedConfig.longDebounce === true
         };
     }
 
@@ -1000,17 +1046,53 @@ class TableInit {
         const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
         if (lines.length === 0) return [];
 
-        const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+        const headers = this._parseCSVLine(lines[0]);
         const data = lines.slice(1).map(line => {
-            const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+            const values = this._parseCSVLine(line);
             const row = {};
             headers.forEach((h, i) => {
-                row[h] = values[i] || '';
+                row[h] = values[i] ?? '';
             });
             return row;
         });
 
         return data;
+    }
+
+    /**
+     * 解析单行 CSV，支持引号内逗号与 "" 转义
+     */
+    _parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+
+            if (inQuotes) {
+                if (char === '"' && nextChar === '"') {
+                    current += '"';
+                    i++;
+                } else if (char === '"') {
+                    inQuotes = false;
+                } else {
+                    current += char;
+                }
+            } else {
+                if (char === '"') {
+                    inQuotes = true;
+                } else if (char === ',') {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+        }
+        result.push(current.trim());
+        return result;
     }
 
     _extractDataFromDOM(element) {
@@ -1125,7 +1207,6 @@ class Table {
         this.registry = new CUITableRegistry();
         this.dataLayer = new TableDataLayer(this.registry);
         this.initModule = new TableInit(this.registry, this.dataLayer);
-        this.tables = new Map();
     }
 
     init() {

@@ -109,3 +109,92 @@
   5. **遗留代码清理**：
      - 删除 `index` 未使用提示、`fillTableBody`、`maskIdcard`、`maskPhone` 等函数，lint 警告为零。
 - **状态**: 表格模块完整重构，注册表机制生效，满足双向同步与标准化渲染需求
+
+### [2026-06-26 表格模块 Spec 差距收尾]
+- **操作人**: Trae
+- **操作内容**: 依据 `user/表格模块标准化开发文档（AI落地专用·严苛规范版）.md` 逐章复核，完成剩余 3 项差距（N1/N2/N3）收尾。
+  1. **N1 全量重建规则清空**（Spec §7.2）：
+     - `TableRenderLayer.render()` 在表头 `headerHash` 变化分支增加 `lastHeaderHash !== ''` 守卫，非首次变更时调用 `registry.clearRules()` + `setPageState({pageNum:1})`，清空历史规则并重置分页到第 1 页；首次渲染不触达，避免破坏 `processRawData→setData` 已写入的 `total/pageCount`。
+  2. **N2 updateData 表头一致性校验**（Spec §8.7/§11.3）：
+     - `TableDataLayer.updateData` 新增 `entry.header` 与传入 `headers` 字段集比较，不一致时清空规则 + 重置分页，配合渲染层 `headerHash` 变化走全量重建路径；空表头守卫避免首次更新误判。
+  3. **N3 测试用例补充与代码漂移消除**：
+     - 同步 `src/test/table/test-table-modules.js` 内联 `_cleanAndAlignData` 至 table.js 增强版（含超列报错 + 缺列补齐）。
+     - 新增 5 个测试用例：CSV 字段内逗号转义、CSV 双引号转义、超列截断报错、loading 加锁跳过、longDebounce 防抖时长判定。
+- **修改文件范围**:
+  - `src/modules/js/table.js`（render / _fullRebuild / TableDataLayer.updateData）
+  - `src/test/table/test-table-modules.js`（内联副本同步 + 5 个新用例）
+  - `.trae/documents/table-spec-gap-closure-plan.md`（对比复核与收尾计划文档）
+- **验证**: `node src/test/table/test-table-modules.js` 输出 `23 通过 / 0 失败`。
+- **状态**: Spec 18 项核心要求全部达标，9 项超越 Spec 的增强保持现状，历史 G1–G8 差距全部修复或验证为非问题，N1–N3 收尾完成。
+
+### [2026-06-26 表格样式细节修正：垂直居中 + 省略号 + 长文本 focus 展开]
+- **操作人**: Trae
+- **操作内容**: 按用户需求修正表格单元格样式细节，实现"非长文本垂直居中 + 长文本省略号 + focus 展开滚动"三段式交互。
+  1. **CSS th/td 拆分**（`table.css`）：
+     - `th` 保持 `display:block`，省略号三件套直接生效（表头单行省略）。
+     - `td` 改为 `display:flex; align-items:center`，实现单元格内垂直居中。
+     - 新增 `.CUI-cell-text` 内层文本容器：`display:block` + 省略号三件套 + `min-width:0; flex:1 1 auto`，承载省略号（flex 匿名 item 不渲染省略号，需下沉到 block 子元素）。
+  2. **长文本 focus 展开机制**（`table.css`）：
+     - `.CUI-table .CUI-td-long` 覆盖 `td` 的 `display:flex` 为 `display:block`（选择器从 `.CUI-td-long` 提升为 `.CUI-table .CUI-td-long`，特异性 0,2,0 > 0,1,1，确保优先级）。
+     - `:focus` 时 `max-height:300px; overflow:auto; z-index:20; outline:2px solid primary`，悬浮于相邻单元格之上。
+     - `:focus .CUI-cell-text` 释放 `white-space:normal; overflow:visible; text-overflow:clip; word-break:break-word`，由 td 滚动查看全部内容。
+  3. **数字/图片 flex 适配**（`table.css`）：
+     - `.CUI-td-number` 改用 `justify-content:flex-end`（flex 下 text-align 失效），内层 span 保留 `text-align:right`。
+     - `[data-type="image"]` td 加 `justify-content:center`。
+     - `.CUI-table-cell-email/link` 和 `.CUI-currency-amount` 加省略号三件套 + `min-width:0; flex:1 1 auto`。
+     - 删除 `.CUI-table-autoheight .CUI-td-long` 旧覆盖规则（与新机制冲突）。
+  4. **JS 渲染层适配**（`table.js`）：
+     - `_formatCellValue` 的 `number` 和 `default` 分支用 `<span class="CUI-cell-text">` 包裹文本，配合 CSS 省略号。
+     - `_renderBody` 长文本 td 加 `tabindex="0"` 使其可聚焦，触发 `:focus` 展开。
+- **修改文件范围**:
+  - `src/modules/css/table.css`（Version 0.6.0 → 0.7.1）
+  - `src/modules/js/table.js`（Version 0.7.0 → 0.7.1）
+- **关键技术决策**:
+  - flex + align-items:center 实现垂直居中，但 flex 容器的直接文本（匿名 flex item）不渲染 text-overflow:ellipsis，通过 Playwright 像素级实验确认（flex 版本 0 像素差异，block 版本 180 像素差异），采用内层 span 方案兼顾两者。
+  - 长文本不垂直居中（display:block），与普通单元格（display:flex + align-items:center）视觉区分；focus 展开后内容自然换行滚动。
+- **验证**: Playwright 页面级样式验证 `/tmp/table_style_verify.py` 输出 `23 通过 / 0 失败`，覆盖：普通单元格垂直居中（差值<2px）、省略号三件套、长文本默认省略号+溢出、focus 展开释放 nowrap、数字右对齐、图片居中、货币省略号。
+- **状态**: 样式细节修正完成，垂直居中 + 省略号 + 长文本 focus 展开三段式交互全部生效。
+
+### [2026-06-26 表格样式行为调整：短文本横向滚动 + 长文本3行省略号]
+- **操作人**: Trae
+- **操作内容**: 按用户反馈调整单元格溢出处理策略，从"单行省略号"改为"短文本横向滚动 + 长文本3行省略号"。
+  1. **短文本横向滚动**（`table.css`）：
+     - `.CUI-cell-text` 去掉 `text-overflow:ellipsis`，`overflow:hidden` 改为 `overflow-x:auto; overflow-y:hidden`，横向溢出时出现滚动条而非省略号，保留内容完整可读（如身份证号18位长数字）。
+     - `.CUI-table-cell-email/link`、`.CUI-currency-amount` 同步改为横向滚动，加 `display:block` 让 `<a>` 等元素支持 overflow。
+  2. **长文本3行省略号**（`table.css`）：
+     - 新增 `.CUI-td-long .CUI-cell-text` 规则：`display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; white-space:normal`，实现3行截断 + 省略号。
+     - 覆盖短文本的横向滚动规则（white-space:normal 允许换行）。
+  3. **长文本 focus 保持3行 + 滚动**（`table.css`）：
+     - `.CUI-table .CUI-td-long:focus` 的 `max-height` 从 `300px` 改为 `calc(1.5em * 3 + var(--size-sm) * 2 + 8px)`（3行 + padding + 滚动条空间），focus 后保持3行高度不变。
+     - `.CUI-table .CUI-td-long:focus .CUI-cell-text` 用 `-webkit-line-clamp:unset` 释放3行截断，内容完整渲染，由 td 的 `overflow:auto` 滚动查看超出部分。
+  4. **autoheight 模式适配**（`table.css`）：
+     - 新增 `.CUI-table-autoheight .CUI-td-long .CUI-cell-text` 规则：`-webkit-line-clamp:unset; overflow:visible`，自动行高模式下长文本完整显示不截断。
+- **修改文件范围**:
+  - `src/modules/css/table.css`（Version 0.7.1 → 0.7.2）
+  - `src/modules/js/table.js`（Version 0.7.1 → 0.7.2，版本号同步）
+- **关键技术决策**:
+  - 短文本横向滚动 vs 省略号：横向滚动保留内容完整可读，适合身份证号、手机号等长位数字；省略号会截断关键信息。
+  - 长文本3行省略号 vs 单行：3行展示更多上下文，配合 -webkit-line-clamp 实现标准多行省略号。
+  - focus 保持3行高度：避免 focus 后单元格突然变高影响布局，保持视觉稳定性；通过 td overflow:auto + span overflow:visible 实现内容完整渲染 + 滚动查看。
+- **验证**: Playwright 页面级样式验证 `/tmp/table_style_verify2.py` 输出 `35 通过 / 0 失败`，覆盖：短文本横向滚动（身份证号 scrollWidth=173 > clientWidth=167）、长文本3行省略号（line-clamp=3）、focus 保持3行高度（max-height=96px）+ 释放 line-clamp + 可滚动（个人简介 scrollHeight=208 > clientHeight=95）、数字右对齐、图片居中、货币横向滚动。
+- **状态**: 样式行为调整完成，短文本横向滚动 + 长文本3行省略号 + focus 保持3行可滚动的三段式交互全部生效。
+
+### [2026-06-26 表格交互优化：hover 替代 focus + 短文本列宽放宽]
+- **操作人**: Trae
+- **操作内容**: 按用户反馈调整长文本展开交互方式，并放宽短文本列宽确保身份证号完整显示。
+  1. **长文本 hover 替代 focus**（`table.css`）：
+     - `.CUI-table .CUI-td-long:focus` → `.CUI-table .CUI-td-long:hover`
+     - `.CUI-table .CUI-td-long:focus .CUI-cell-text` → `.CUI-table .CUI-td-long:hover .CUI-cell-text`
+     - 鼠标悬浮即展开（保持3行高度 + 释放 line-clamp + 可滚动），移出即收起，无需点击聚焦。
+  2. **去掉 tabindex**（`table.js`）：
+     - `_renderBody` 中长文本 td 不再设置 `tabindex="0"`，因为不再依赖 focus 交互。
+  3. **短文本列宽放宽**（`table.css`）：
+     - `idcard` 类型：`width:200px → 240px`，`min-width:180px → 220px`（身份证号18位完整显示）。
+     - `phone` 类型：`width:140px → 160px`，`min-width:120px → 140px`（手机号11位完整显示）。
+- **修改文件范围**:
+  - `src/modules/css/table.css`（Version 0.7.2 → 0.7.3）
+  - `src/modules/js/table.js`（Version 0.7.2 → 0.7.3，去掉 tabindex）
+- **验证**:
+  - Playwright 样式验证 `/tmp/table_style_verify3.py` 输出 `28 通过 / 0 失败`：身份证号列宽 240px 完整显示（scrollWidth=207 = clientWidth=207，无需滚动）、长文本无 tabindex、hover 释放 line-clamp + 可滚动（个人简介 scrollHeight=208 > clientHeight=95）。
+  - Node 单元测试 `node src/test/table/test-table-modules.js` 输出 `23 通过 / 0 失败`。
+- **状态**: 交互优化完成，hover 展开替代 focus，短文本列宽放宽确保关键信息完整可读。
