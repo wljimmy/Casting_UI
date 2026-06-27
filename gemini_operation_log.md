@@ -198,3 +198,23 @@
   - Playwright 样式验证 `/tmp/table_style_verify3.py` 输出 `28 通过 / 0 失败`：身份证号列宽 240px 完整显示（scrollWidth=207 = clientWidth=207，无需滚动）、长文本无 tabindex、hover 释放 line-clamp + 可滚动（个人简介 scrollHeight=208 > clientHeight=95）。
   - Node 单元测试 `node src/test/table/test-table-modules.js` 输出 `23 通过 / 0 失败`。
 - **状态**: 交互优化完成，hover 展开替代 focus，短文本列宽放宽确保关键信息完整可读。
+
+### [2026-06-26 列宽改用 em 单位 + idcard/phone/date 居中显示]
+- **操作人**: Trae
+- **操作内容**: 按用户反馈将固定 px 列宽改为 em 单位，实现字体大小自适应；idcard/phone/date/datetime 单元格居中显示。
+  1. **去掉固定 px 宽度**（`table.css`）：
+     - `idcard`：`width:240px; min-width:220px` → `min-width: 13em`（18位身份证号，208px@16px字体）
+     - `phone`：`width:160px; min-width:140px` → `min-width: 9em`（11位手机号，144px）
+     - `date`：`width:130px; min-width:110px` → `min-width: 9em`（yyyy-mm-dd，144px）
+     - `datetime`：`width:180px; min-width:150px` → `min-width: 14em`（yyyy-mm-dd hh:mm:ss，224px）
+     - em 单位随字体大小缩放，比 px 更灵活。
+  2. **居中显示**（`table.css`）：
+     - 新增 `td[data-type="phone/idcard/date/datetime"]` 的 `justify-content: center` 和 `.CUI-cell-text` 的 `text-align: center`。
+     - 这些类型内容长度固定（身份证号18位、手机号11位、日期格式固定），居中显示更美观。
+  3. **min-width 覆盖内容宽度确保 th/td 对齐**：
+     - flex 布局下 th/td 独立计算宽度，内容不同会错位。
+     - min-width 设为覆盖 td 内容宽度，使 th/td 都等于 min-width，实现对齐。
+- **修改文件范围**:
+  - `src/modules/css/table.css`（Version 0.7.3 → 0.7.4）
+- **验证**: Playwright 样式验证 `/tmp/table_style_verify4.py` 输出 `31 通过 / 0 失败`：身份证号 min-width=208px(13em)、td/th 对齐(208=208)、居中、18位完整显示；手机号/日期同理；长文本 hover 展开正常。
+- **状态**: 列宽改用 em 单位完成，idcard/phone/date/datetime 居中显示，字体大小自适应。

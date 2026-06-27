@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.7.3
+ * Version: 0.7.4
  * Module: table.css
  * Description: 表格组件样式 - 统一边框折叠、背景色挂载与 sticky 多方向冻结层级
  * Copyright (c) 2026 Bingo工作室
@@ -412,16 +412,22 @@
     min-width: 120px;
 }
 
+/* phone/idcard/date/datetime: 去掉固定 px 宽度，用 em 作为最小宽度下限，
+ * 内容自动扩张；单元格内居中显示。
+ * em 基于字体大小自适应，比 px 更灵活。
+ * min-width 设为覆盖内容宽度，确保 th/td 在 flex 布局下对齐。
+ * - phone: 11位数字 → 9em
+ * - idcard: 18位数字 → 13em
+ * - date: yyyy-mm-dd 10字符 → 9em
+ * - datetime: yyyy-mm-dd hh:mm:ss 19字符 → 14em */
 .CUI-table th[data-type="phone"],
 .CUI-table td[data-type="phone"] {
-    width: 160px;
-    min-width: 140px;
+    min-width: 9em;
 }
 
 .CUI-table th[data-type="idcard"],
 .CUI-table td[data-type="idcard"] {
-    width: 240px;
-    min-width: 220px;
+    min-width: 13em;
 }
 
 .CUI-table th[data-type="email"],
@@ -438,14 +444,27 @@
 
 .CUI-table th[data-type="date"],
 .CUI-table td[data-type="date"] {
-    width: 130px;
-    min-width: 110px;
+    min-width: 9em;
 }
 
 .CUI-table th[data-type="datetime"],
 .CUI-table td[data-type="datetime"] {
-    width: 180px;
-    min-width: 150px;
+    min-width: 14em;
+}
+
+/* phone/idcard/date/datetime 数据单元格居中显示 */
+.CUI-table td[data-type="phone"],
+.CUI-table td[data-type="idcard"],
+.CUI-table td[data-type="date"],
+.CUI-table td[data-type="datetime"] {
+    justify-content: center;
+}
+
+.CUI-table td[data-type="phone"] .CUI-cell-text,
+.CUI-table td[data-type="idcard"] .CUI-cell-text,
+.CUI-table td[data-type="date"] .CUI-cell-text,
+.CUI-table td[data-type="datetime"] .CUI-cell-text {
+    text-align: center;
 }
 
 .CUI-table th[data-type="image"],
