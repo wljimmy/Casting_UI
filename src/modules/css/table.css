@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.8.0
+ * Version: 0.8.1
  * Module: table.css
  * Description: 表格组件样式 - 统一边框折叠、背景色挂载与 sticky 多方向冻结层级
  * Copyright (c) 2026 Bingo工作室
@@ -21,6 +21,17 @@
     background: var(--bg-color);
     box-sizing: border-box;
     padding: 0;
+    /* 覆盖 components.css 通用容器的 margin-bottom，消除与底栏的间隙 */
+    margin-bottom: 0;
+    /* 底栏始终存在，底角改直角与底栏顶角无缝衔接 */
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* 功能型表格有工具栏在上方时，容器顶角改直角与工具栏底角无缝衔接 */
+.CUI-table-toolbar + .CUI-table-container {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
 }
 
 .CUI-table-toolbar {
