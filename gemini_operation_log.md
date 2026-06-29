@@ -299,3 +299,31 @@
 - **修改文件范围**: `src/modules/css/table.css`（v0.8.0 → v0.8.1）
 - **验证**: Playwright 衔接验证 `15 通过 / 0 失败`：容器 margin-bottom=0、与工具栏/底栏均无间隙、四角直角与相邻元素无缝对接、三者宽度一致且左右对齐、工具栏顶角和底栏底角保持圆角。Node 单元测试 `23 通过 / 0 失败`。
 - **状态**: 衔接修复完成，工具栏→容器→底栏形成完整胶囊形状（外圆内直）。
+
+### [2026-06-30 表格列宽架构重构：thead 定义 + JS 同步到 tbody/tfoot (v0.8.2)]
+- **操作人**: Trae
+- **操作内容**: 按用户反馈重构列宽架构，实现"表头定义列宽后，tbody/tfoot 自动与 thead 一致"，消除在 td 上重复定义列宽的冗余设计。
+  - **背景**：用户指出"表头定义完列宽以后，底下就不应再定义列宽，tbody/tfoot 应自动和 thead 一致"。当前 CSS 在 `th[data-type]` 和 `td[data-type]` 上重复定义列宽，且 tfoot 列与 thead/tbody 不对齐。
+  - **根因**：框架用 `display: flex/block` 控制 td 布局（实现垂直居中、长文本展开），破坏了原生 `display: table` 的列宽自动共享机制，导致 thead/tbody/tfoot 各自独立计算列宽。
+  - **架构方案**：CSS 列宽规则只保留 `th[data-type]`，td 通过 CSS 变量 `--cw` 接收 JS 同步的宽度，实现"定义一次，自动传播"。
+  1. **CSS 列宽规则重构**（`table.css`）：
+     - `.CUI-table td` 基础规则添加 `width: var(--cw, auto)`，由 JS 注入计算宽度
+     - `.CUI-table tfoot td` 移除 `flex: 1`（原等宽分配导致 tfoot 列与 thead 不对齐）
+     - 所有 `th[data-type="X"], td[data-type="X"]` 宽度规则改为仅 `th[data-type="X"]`，涵盖 id/number/currency/phone/idcard/email/link/date/datetime/image/password/text-long
+     - td 上的 data-type 对齐规则（justify-content、text-align）保留不变，仅列宽规则剥离
+  2. **JS 列宽同步方法**（`table.js`）：
+     - 新增 `_syncColumnWidths()` 方法：读取 `thead tr:last-child th` 的 `getComputedStyle().width`，通过 `td.style.setProperty('--cw', width)` 同步到所有 tbody td 和 tfoot td/th
+     - 在 `_fullRebuild` 和 `_partialUpdate` 末尾调用 `_syncColumnWidths()`
+     - 删除 `_renderBody` 中失效的 th 内联宽度同步代码（`h.element.style.width` 始终为空，因 th 宽度来自 CSS 规则而非内联样式，从未生效）
+- **修改文件范围**:
+  - `src/modules/css/table.css`（v0.8.1 → v0.8.2）
+  - `src/modules/js/table.js`（v0.8.0 → v0.8.2）
+- **关键技术决策**:
+  - 采用 CSS 变量 `--cw` 而非直接 `td.style.width`：变量方式不覆盖 CSS 规则的优先级，且语义清晰（"列宽来自 thead 同步"），未来若需用户手动覆盖 td 宽度更灵活
+  - 使用 `getComputedStyle(th).width` 而非 `th.style.width`：前者捕获最终计算值（含 CSS 规则 + 内联样式 + max-width 约束），后者只能取内联样式（为空）
+  - `thead tr:last-child th` 选择器：兼容多行表头场景，取最后一行（实际列定义行）
+  - tfoot 同步选择器用 `td, th`：兼容 tfoot 中混合使用 td 和 th 的情况
+- **验证**:
+  - Playwright 列宽对齐验证 `/tmp/table_colwidth_sync_verify.js`：22 列 thead/tbody/tfoot 计算宽度完全一致（前5列 80/100/64/208/144 px），`--cw` 变量已设置到全部 22 个 tbody td 和 22 个 tfoot 单元格，不匹配数 0
+  - Node 单元测试 `23 通过 / 0 失败`
+- **状态**: 列宽架构重构完成，thead 定义一次，tbody/tfoot 通过 JS 同步自动对齐，消除冗余列宽定义。

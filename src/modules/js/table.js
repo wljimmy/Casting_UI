@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.8.0
+ * Version: 0.8.2
  * Module: table.js
  * Description: 数据表格组件 - 标准化分层架构、数据与视图分离、双向实时同步
  * Architecture: 注册表 + 数据层 + 渲染层 + 初始化模块 四合一
@@ -625,12 +625,40 @@ class TableRenderLayer {
         if (entry.config.type === 'functional') {
             this._injectToolbar();
         }
+
+        this._syncColumnWidths();
     }
 
     _partialUpdate(headers, entry) {
         this._renderBody(headers, entry);
         this._renderFooter(headers, entry);
         this._applyFreezeLayout(headers);
+        this._syncColumnWidths();
+    }
+
+    /**
+     * 列宽同步：thead th 定义列宽（CSS 规则），JS 读取 th 计算宽度
+     * 通过 CSS 变量 --cw 同步到所有 tbody/tfoot 单元格，实现"定义一次，自动传播"。
+     * flex 布局破坏了原生 table 的列宽共享，需此方法显式同步。
+     */
+    _syncColumnWidths() {
+        const ths = this.element.querySelectorAll('thead tr:last-child th');
+        if (!ths.length) return;
+
+        const widths = Array.from(ths).map(th => window.getComputedStyle(th).width);
+
+        this.element.querySelectorAll('tbody tr').forEach(tr => {
+            tr.querySelectorAll('td').forEach((td, i) => {
+                if (widths[i]) td.style.setProperty('--cw', widths[i]);
+            });
+        });
+
+        const tfootRow = this.element.querySelector('tfoot tr');
+        if (tfootRow) {
+            tfootRow.querySelectorAll('td, th').forEach((cell, i) => {
+                if (widths[i]) cell.style.setProperty('--cw', widths[i]);
+            });
+        }
     }
 
     _renderBody(headers, entry) {
@@ -658,14 +686,6 @@ class TableRenderLayer {
                 td.setAttribute('data-row-index', row._originalIndex);
                 td.setAttribute('data-value', String(value));
                 if (h.type) td.setAttribute('data-type', h.type);
-
-                /* flex 布局下需显式同步 th 宽度到 td */
-                if (h.element) {
-                    const thInlineWidth = h.element.style.width;
-                    if (thInlineWidth) {
-                        td.style.width = thInlineWidth;
-                    }
-                }
 
                 const cellClasses = [];
                 const isEditable = h.element?.getAttribute('data-editable') === 'true' ||

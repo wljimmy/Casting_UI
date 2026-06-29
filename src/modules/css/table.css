@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.8.1
+ * Version: 0.8.2
  * Module: table.css
  * Description: 表格组件样式 - 统一边框折叠、背景色挂载与 sticky 多方向冻结层级
  * Copyright (c) 2026 Bingo工作室
@@ -146,11 +146,13 @@
 }
 
 /* td 改为 flex：align-items:center 实现单元格内垂直居中。
- * 省略号三件套下沉到内层 .CUI-cell-text（flex 匿名 item 不渲染省略号）。 */
+ * 省略号三件套下沉到内层 .CUI-cell-text（flex 匿名 item 不渲染省略号）。
+ * 列宽由 JS 从 thead th 计算宽度同步到 --cw，不在 td 上重复定义。 */
 .CUI-table td {
     display: flex;
     align-items: center;
     flex-shrink: 0;
+    width: var(--cw, auto);
     padding: var(--size-sm) var(--size-md);
     background-color: var(--bg-color);
     border-right: 1px solid var(--border-color);
@@ -300,7 +302,6 @@
  * ============================================================ */
 
 .CUI-table tfoot td {
-    flex: 1;
     font-weight: 600;
     background-color: var(--bg-gray);
     border-top: 2px solid var(--border-color);
@@ -401,65 +402,56 @@
 }
 
 /* ============================================================
- * 按数据类型的默认列宽规则（配合 table-layout: fixed 生效）
- * 在 th 的 style 或内联 width 未指定时，作为缺省依据
+ * 按数据类型的默认列宽规则
+ * 列宽只在 thead th 上定义，tbody/tfoot 的 td 由 JS 读取 th
+ * 计算宽度后通过 CSS 变量 --cw 同步，不在此重复定义 td 宽度。
+ * td 上的 data-type 仅用于对齐等非宽度样式。
  * ============================================================ */
 
-.CUI-table th[data-type="id"],
-.CUI-table td[data-type="id"] {
+.CUI-table th[data-type="id"] {
     width: 80px;
     min-width: 60px;
 }
 
-.CUI-table th[data-type="number"],
-.CUI-table td[data-type="number"] {
+.CUI-table th[data-type="number"] {
     width: 110px;
     min-width: 80px;
 }
 
-.CUI-table th[data-type="currency"],
-.CUI-table td[data-type="currency"] {
+.CUI-table th[data-type="currency"] {
     width: 150px;
     min-width: 120px;
 }
 
-/* phone/idcard/date/datetime: 去掉固定 px 宽度，用 em 作为最小宽度下限，
- * 内容自动扩张；单元格内居中显示。
+/* phone/idcard/date/datetime: 用 em 作为最小宽度下限，内容自动扩张。
  * em 基于字体大小自适应，比 px 更灵活。
- * min-width 设为覆盖内容宽度，确保 th/td 在 flex 布局下对齐。
  * - phone: 11位数字 → 9em
  * - idcard: 18位数字 → 13em
  * - date: yyyy-mm-dd 10字符 → 9em
  * - datetime: yyyy-mm-dd hh:mm:ss 19字符 → 14em */
-.CUI-table th[data-type="phone"],
-.CUI-table td[data-type="phone"] {
+.CUI-table th[data-type="phone"] {
     min-width: 9em;
 }
 
-.CUI-table th[data-type="idcard"],
-.CUI-table td[data-type="idcard"] {
+.CUI-table th[data-type="idcard"] {
     min-width: 13em;
 }
 
-.CUI-table th[data-type="email"],
-.CUI-table td[data-type="email"] {
+.CUI-table th[data-type="email"] {
     width: 200px;
     min-width: 150px;
 }
 
-.CUI-table th[data-type="link"],
-.CUI-table td[data-type="link"] {
+.CUI-table th[data-type="link"] {
     width: 180px;
     min-width: 120px;
 }
 
-.CUI-table th[data-type="date"],
-.CUI-table td[data-type="date"] {
+.CUI-table th[data-type="date"] {
     min-width: 9em;
 }
 
-.CUI-table th[data-type="datetime"],
-.CUI-table td[data-type="datetime"] {
+.CUI-table th[data-type="datetime"] {
     min-width: 14em;
 }
 
@@ -478,8 +470,7 @@
     text-align: center;
 }
 
-.CUI-table th[data-type="image"],
-.CUI-table td[data-type="image"] {
+.CUI-table th[data-type="image"] {
     width: 80px;
     min-width: 60px;
     text-align: center;
@@ -489,15 +480,13 @@
     justify-content: center;
 }
 
-.CUI-table th[data-type="password"],
-.CUI-table td[data-type="password"] {
+.CUI-table th[data-type="password"] {
     width: 160px;
     min-width: 120px;
 }
 
 /* 长文本字段列宽（省略号与展开由 .CUI-td-long / .CUI-cell-text 接管） */
-.CUI-table th[data-type="text-long"],
-.CUI-table td[data-type="text-long"] {
+.CUI-table th[data-type="text-long"] {
     width: 280px;
     min-width: 200px;
     max-width: 400px;
