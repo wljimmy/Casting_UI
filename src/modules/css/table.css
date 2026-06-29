@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.7.5
+ * Version: 0.8.0
  * Module: table.css
  * Description: 表格组件样式 - 统一边框折叠、背景色挂载与 sticky 多方向冻结层级
  * Copyright (c) 2026 Bingo工作室
@@ -14,6 +14,8 @@
 .CUI-table-container {
     overflow: auto;
     width: 100%;
+    height: 500px;
+    position: relative;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     background: var(--bg-color);
@@ -597,4 +599,21 @@
 .CUI-editable-cell:focus {
     background-color: var(--gray-100) !important;
     box-shadow: inset 0 0 0 1px var(--primary-color);
+}
+
+/* ============================================================
+ * 搜索框与图片单元格
+ * ============================================================ */
+
+/* 工具栏搜索框：去掉外边距，固定宽度 */
+.CUI-table-search-box {
+    margin: 0;
+    width: 260px;
+}
+
+/* 图片单元格：仅受单元格尺寸限制自动缩放，浏览器默认保持原始比例，
+ * 不加 object-fit/border-radius 等任何视觉修饰，完全原样显示。 */
+.CUI-table-cell-image {
+    max-width: 100%;
+    max-height: calc(1.5em * 3);
 }

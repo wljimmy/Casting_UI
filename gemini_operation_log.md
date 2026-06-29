@@ -251,3 +251,38 @@
 - **修改文件范围**: `src/modules/css/table.css`（Version 0.7.4 → 0.7.5）
 - **验证**: Playwright 尺寸测量确认 hover 前后 width/height 完全一致（320→320, 88→88），scrollHeight=208 > clientHeight=87 仍可滚动；样式验证 31/31 通过。
 - **状态**: 修复完成，hover 展开框尺寸与默认一致。
+
+### [2026-06-29 表格模块全面审查与Bug修复+代码优化 (v0.8.0)]
+- **操作人**: Trae
+- **操作内容**: 完整审查 table.js（1338行）和 table.css（600行），修复5个Bug + 3项代码优化。
+  
+  **Bug 修复**:
+  1. **B1: `_bindSortEvents` 中 `this.render()` 报 TypeError**（L1207）：
+     - `this` 是 TableInit，无 render 方法；排序通过 registry 'filtered' 事件触发渲染
+     - 删除 `this.render()`，Playwright 确认不再报错
+  2. **B2: dataLayer 绕过 registry 直接操作 `_store`**（L416/474/483）：
+     - registry 新增 `clearFilters`/`clearSorts`/`updateCellData` 方法
+     - dataLayer 的 `updateCell`/`clearFilters`/`clearSorts` 改调 registry 方法
+  3. **B3: image 类型内联样式**（L916）：
+     - 去掉 `style="width:40px;height:40px;border-radius:4px;object-fit:cover;"`
+     - 改用 `class="CUI-table-cell-image"`，CSS 仅设 `max-width:100%; max-height:calc(1.5em*3)`
+     - 不加 object-fit/border-radius 等视觉修饰，浏览器默认保持原始比例，图片完全原样显示只受单元格尺寸限制
+  4. **B4: initWrapper 内联样式**（L529-531）：
+     - 去掉 `container.style.height/overflow/position`
+     - 改由 `.CUI-table-container` CSS 提供 `height:500px; position:relative; overflow:auto`
+  5. **B5: _injectToolbar 内联样式**（L875）：
+     - 去掉 `style="margin:0; width:260px;"`
+     - 改用 `class="CUI-table-search-box"`，CSS 控制
+
+  **代码优化**:
+  1. **O3: `_cleanAndAlignData` 三分支重复合并**：缺列/超列/正常三分支的 forEach 合并为一个
+  2. **O4: `MAX_RULES` 常量启用**：CUITableRegistry 构造函数添加 `this.MAX_RULES=10`，addFilterRule/addSortRule 使用 `this.MAX_RULES` 替代硬编码
+  3. **O5: 搜索框防抖**：input 事件加 300ms 防抖，避免大数据量时频繁搜索卡顿
+
+- **修改文件范围**:
+  - `src/modules/js/table.js`（v0.7.5 → v0.8.0）
+  - `src/modules/css/table.css`（v0.7.5 → v0.8.0）
+- **验证**:
+  - Node 单元测试 `23 通过 / 0 失败`
+  - Playwright 综合验证 `20 通过 / 0 失败`：B1-B5 全部修复确认 + O5 防抖验证（100ms 不触发、500ms 生效）
+- **状态**: 表格模块功能部分基本完成，后续进入显示部分优化。

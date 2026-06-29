@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.7.5
+ * Version: 0.8.0
  * Module: table.js
  * Description: 数据表格组件 - 标准化分层架构、数据与视图分离、双向实时同步
  * Architecture: 注册表 + 数据层 + 渲染层 + 初始化模块 四合一
@@ -31,6 +31,7 @@ class CUITableRegistry {
         if (CUITableRegistry._instance) return CUITableRegistry._instance;
         this._store = new Map();
         this._listeners = new Map();
+        this.MAX_RULES = 10;
         CUITableRegistry._instance = this;
     }
 
@@ -113,8 +114,8 @@ class CUITableRegistry {
     addFilterRule(tableId, rule) {
         const entry = this._store.get(tableId);
         if (!entry) return false;
-        if (entry.filterRules.length >= 10) {
-            console.error('[CUITableRegistry] 筛选规则超过10条上限');
+        if (entry.filterRules.length >= this.MAX_RULES) {
+            console.error('[CUITableRegistry] 筛选规则超过上限');
             return false;
         }
         entry.filterRules.push(rule);
@@ -129,8 +130,8 @@ class CUITableRegistry {
         if (!entry) return false;
         /* 先移除同字段的旧规则，避免同字段累积多条规则 */
         entry.sortRules = entry.sortRules.filter(r => r.field !== rule.field);
-        if (entry.sortRules.length >= 10) {
-            console.error('[CUITableRegistry] 排序规则超过10条上限');
+        if (entry.sortRules.length >= this.MAX_RULES) {
+            console.error('[CUITableRegistry] 排序规则超过上限');
             return false;
         }
         entry.sortRules.push(rule);
@@ -180,6 +181,35 @@ class CUITableRegistry {
         entry.updateTime = Date.now();
         this._store.set(tableId, entry);
         this._notify(tableId, 'rulesCleared');
+    }
+
+    clearFilters(tableId) {
+        const entry = this._store.get(tableId);
+        if (!entry) return;
+        entry.filterRules = [];
+        entry.updateTime = Date.now();
+        this._store.set(tableId, entry);
+        this._notify(tableId, 'filter');
+    }
+
+    clearSorts(tableId) {
+        const entry = this._store.get(tableId);
+        if (!entry) return;
+        entry.sortRules = [];
+        entry.updateTime = Date.now();
+        this._store.set(tableId, entry);
+        this._notify(tableId, 'sort');
+    }
+
+    updateCellData(tableId, rowIndex, field, value) {
+        const entry = this._store.get(tableId);
+        if (!entry) return false;
+        const row = entry.processedData.find(r => r._originalIndex === rowIndex);
+        if (!row) return false;
+        row[field] = value;
+        entry.updateTime = Date.now();
+        this._store.set(tableId, entry);
+        return true;
     }
 
     setHeader(tableId, header) {
@@ -270,22 +300,13 @@ class TableDataLayer {
             
             if (Array.isArray(row)) {
                 const actualCols = row.length;
-                if (actualCols < expectedCols) {
-                    /* 缺列自动补齐空值 */
-                    headers.forEach((h, colIndex) => {
-                        cleanRow[h.field] = row[colIndex] ?? '';
-                    });
-                } else if (actualCols > expectedCols) {
-                    /* 超列：控制台报错 + 截断处理 */
+                if (actualCols > expectedCols) {
                     console.error(`[CUI Table] 数据列数 (${actualCols}) 超过表头列数 (${expectedCols})，行 ${rowIndex + 1}，已截断`);
-                    headers.forEach((h, colIndex) => {
-                        cleanRow[h.field] = row[colIndex] ?? '';
-                    });
-                } else {
-                    headers.forEach((h, colIndex) => {
-                        cleanRow[h.field] = row[colIndex] ?? '';
-                    });
                 }
+                /* 缺列自动补齐空值、超列截断、正常列均走同一逻辑 */
+                headers.forEach((h, colIndex) => {
+                    cleanRow[h.field] = row[colIndex] ?? '';
+                });
             } else if (typeof row === 'object' && row !== null) {
                 headers.forEach(h => {
                     cleanRow[h.field] = row[h.field] !== undefined && row[h.field] !== null ? row[h.field] : '';
@@ -405,15 +426,7 @@ class TableDataLayer {
     }
 
     updateCell(tableId, rowIndex, field, value) {
-        const entry = this.registry.get(tableId);
-        if (!entry) return false;
-
-        const row = entry.processedData.find(r => r._originalIndex === rowIndex);
-        if (!row) return false;
-
-        row[field] = value;
-        entry.updateTime = Date.now();
-        this.registry._store.set(tableId, entry);
+        if (!this.registry.updateCellData(tableId, rowIndex, field, value)) return false;
         this.recalculate(tableId);
         return true;
     }
@@ -467,20 +480,12 @@ class TableDataLayer {
     }
 
     clearFilters(tableId) {
-        const entry = this.registry.get(tableId);
-        if (!entry) return;
-        entry.filterRules = [];
-        entry.updateTime = Date.now();
-        this.registry._store.set(tableId, entry);
+        this.registry.clearFilters(tableId);
         this.recalculate(tableId);
     }
 
     clearSorts(tableId) {
-        const entry = this.registry.get(tableId);
-        if (!entry) return;
-        entry.sortRules = [];
-        entry.updateTime = Date.now();
-        this.registry._store.set(tableId, entry);
+        this.registry.clearSorts(tableId);
         this.recalculate(tableId);
     }
 }
@@ -526,9 +531,6 @@ class TableRenderLayer {
         if (!this.element.parentNode.classList.contains('CUI-table-container')) {
             const container = document.createElement('div');
             container.className = 'CUI-table-container';
-            container.style.height = '500px';
-            container.style.overflow = 'auto';
-            container.style.position = 'relative';
             this.element.parentNode.insertBefore(container, this.element);
             container.appendChild(this.element);
         }
@@ -872,7 +874,7 @@ class TableRenderLayer {
 
         toolbar.innerHTML = `
             <div class="CUI-table-toolbar-left">
-                <div class="CUI-input-box CUI-input--simple" style="margin: 0; width: 260px;">
+                <div class="CUI-input-box CUI-input--simple CUI-table-search-box">
                     <input type="text" id="${this.tableId}-search" class="CUI-input" placeholder="输入关键字搜索...">
                 </div>
             </div>
@@ -880,8 +882,12 @@ class TableRenderLayer {
         `;
 
         const searchInput = toolbar.querySelector(`#${this.tableId}-search`);
+        let searchTimer = null;
         searchInput?.addEventListener('input', (e) => {
-            this.dataLayer.search(this.tableId, e.target.value.trim());
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                this.dataLayer.search(this.tableId, e.target.value.trim());
+            }, 300);
         });
     }
 
@@ -913,7 +919,7 @@ class TableRenderLayer {
                 return `<a href="${escapeHtml(prefix + str)}" class="CUI-table-cell-link" target="_blank" rel="noopener">${escapeHtml(str)}</a>`;
             }
             case 'image':
-                return `<img src="${escapeHtml(str)}" alt="" style="width:40px;height:40px;border-radius:4px;object-fit:cover;" loading="lazy">`;
+                return `<img src="${escapeHtml(str)}" alt="" class="CUI-table-cell-image" loading="lazy">`;
             default:
                 return `<span class="CUI-cell-text">${escapeHtml(str)}</span>`;
         }
@@ -1204,8 +1210,8 @@ class TableInit {
                 this.dataLayer.unsort(tableId, field);
                 /* 清除 class 后不加新 class，恢复默认 ↕ 图标 */
             }
-            /* 排序变更后重新渲染 tbody，反映排序结果 */
-            this.render();
+            /* 排序变更通过 registry 'filtered' 事件触发 _scheduleUpdate → render，
+             * 无需手动调用 render（TableInit 无 render 方法）。 */
         });
     }
 
