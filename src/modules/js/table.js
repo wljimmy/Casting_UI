@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.8.2
+ * Version: 0.9.0
  * Module: table.js
  * Description: 数据表格组件 - 标准化分层架构、数据与视图分离、双向实时同步
  * Architecture: 注册表 + 数据层 + 渲染层 + 初始化模块 四合一
@@ -151,6 +151,17 @@ class CUITableRegistry {
             this._store.set(tableId, entry);
             this._notify(tableId, 'sort');
         }
+        return true;
+    }
+
+    removeFilterRule(tableId, index) {
+        const entry = this._store.get(tableId);
+        if (!entry) return false;
+        if (index < 0 || index >= entry.filterRules.length) return false;
+        entry.filterRules.splice(index, 1);
+        entry.updateTime = Date.now();
+        this._store.set(tableId, entry);
+        this._notify(tableId, 'filter');
         return true;
     }
 
@@ -472,6 +483,13 @@ class TableDataLayer {
         return { code: 0, total: entry.filteredData.length, sortRules: entry.sortRules };
     }
 
+    unfilter(tableId, index) {
+        this.registry.removeFilterRule(tableId, index);
+        this.recalculate(tableId);
+        const entry = this.registry.get(tableId);
+        return { code: 0, total: entry.filteredData.length, filterRules: entry.filterRules };
+    }
+
     search(tableId, keyword, field = 'all', mode = 'fuzzy') {
         this.registry.setSearchRules(tableId, { keyword, field, mode });
         this.recalculate(tableId);
@@ -633,6 +651,7 @@ class TableRenderLayer {
         this._renderBody(headers, entry);
         this._renderFooter(headers, entry);
         this._applyFreezeLayout(headers);
+        this._updatePagination(entry);
         this._syncColumnWidths();
     }
 
@@ -820,9 +839,31 @@ class TableRenderLayer {
         const startIdx = total === 0 ? 0 : (pageNum - 1) * pageSize + 1;
         const endIdx = Math.min(total, pageNum * pageSize);
 
+        const headers = entry.header || [];
+        const fieldLabel = (field) => {
+            const h = headers.find(hh => hh.field === field);
+            return h ? (h.label || h.field) : field;
+        };
+
+        const sortBadges = (entry.sortRules || []).map(r => `
+            <span class="CUI-badge CUI-badge-outline CUI-badge-secondary CUI-badge-closeable" data-sort-field="${escapeHtml(r.field)}">
+                ${escapeHtml(fieldLabel(r.field))} ${r.order === 'asc' ? '↑' : '↓'}
+                <button class="CUI-badge-close" type="button">×</button>
+            </span>
+        `).join('');
+
+        const filterBadges = (entry.filterRules || []).map((r, i) => `
+            <span class="CUI-badge CUI-badge-outline CUI-badge-secondary CUI-badge-closeable" data-filter-index="${i}">
+                ${escapeHtml(fieldLabel(r.field))} ${escapeHtml(this._filterOpLabel(r.operator))} ${escapeHtml(r.value)}
+                <button class="CUI-badge-close" type="button">×</button>
+            </span>
+        `).join('');
+
         footerBar.innerHTML = `
             <div class="CUI-table-status-bar CUI-status CUI-status--info">
                 <span>显示 ${startIdx}-${endIdx} 条 / 共 ${total} 条</span>
+                ${sortBadges}
+                ${filterBadges}
             </div>
             <div class="CUI-table-pagination">
                 <div class="CUI-pagination-size">
@@ -881,6 +922,20 @@ class TableRenderLayer {
             if (page > entry.pageState.pageCount) page = entry.pageState.pageCount;
             setPage(page);
         });
+
+        footerBar.addEventListener('click', (e) => {
+            const closeBtn = e.target.closest('.CUI-badge-close');
+            if (!closeBtn) return;
+            const badge = closeBtn.closest('.CUI-badge-closeable');
+            if (!badge) return;
+            const sortField = badge.getAttribute('data-sort-field');
+            const filterIdx = badge.getAttribute('data-filter-index');
+            if (sortField !== null) {
+                this.dataLayer.unsort(this.tableId, sortField);
+            } else if (filterIdx !== null) {
+                this.dataLayer.unfilter(this.tableId, parseInt(filterIdx, 10));
+            }
+        });
     }
 
     _injectToolbar() {
@@ -898,7 +953,10 @@ class TableRenderLayer {
                     <input type="text" id="${this.tableId}-search" class="CUI-input" placeholder="输入关键字搜索...">
                 </div>
             </div>
-            <div class="CUI-table-toolbar-right"></div>
+            <div class="CUI-table-toolbar-right">
+                <button class="CUI-btn CUI-btn-sm CUI-btn-secondary CUI-table-filter-btn">筛选</button>
+                <button class="CUI-btn CUI-btn-sm CUI-btn-secondary CUI-table-export-btn">导出</button>
+            </div>
         `;
 
         const searchInput = toolbar.querySelector(`#${this.tableId}-search`);
@@ -909,6 +967,165 @@ class TableRenderLayer {
                 this.dataLayer.search(this.tableId, e.target.value.trim());
             }, 300);
         });
+
+        toolbar.querySelector('.CUI-table-filter-btn')?.addEventListener('click', () => {
+            this._openFilterPanel();
+        });
+
+        toolbar.querySelector('.CUI-table-export-btn')?.addEventListener('click', () => {
+            this._exportCSV();
+        });
+    }
+
+    /**
+     * 导出当前筛选后全量数据为 CSV（UTF-8 with BOM，Excel 兼容）
+     */
+    _exportCSV() {
+        const entry = this.registry.get(this.tableId);
+        if (!entry) return;
+        const data = entry.filteredData || [];
+        if (data.length === 0) {
+            alert('暂无数据可导出');
+            return;
+        }
+
+        const headers = entry.header || [];
+        const escapeCSV = (val) => {
+            const s = String(val ?? '');
+            if (/[",\n\r]/.test(s)) {
+                return '"' + s.replace(/"/g, '""') + '"';
+            }
+            return s;
+        };
+
+        const lines = [];
+        lines.push(headers.map(h => escapeCSV(h.label || h.field)).join(','));
+        data.forEach(row => {
+            lines.push(headers.map(h => escapeCSV(row[h.field])).join(','));
+        });
+
+        const bom = '\uFEFF';
+        const csv = bom + lines.join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.tableId}_${ts}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+     * 操作符中文映射
+     */
+    _filterOpLabel(op) {
+        const map = {
+            '=': '等于', '!=': '不等于', '>': '大于', '<': '小于',
+            '>=': '≥', '<=': '≤', 'contains': '包含'
+        };
+        return map[op] || op;
+    }
+
+    /**
+     * 打开筛选 Overlay 面板
+     */
+    _openFilterPanel() {
+        const entry = this.registry.get(this.tableId);
+        if (!entry) return;
+        const headers = entry.header || [];
+
+        const ov = window.CUI.overlay({ type: 'glass' });
+        if (!ov) return;
+
+        const fieldOptions = headers.map(h =>
+            `<option value="${escapeHtml(h.field)}">${escapeHtml(h.label || h.field)}</option>`
+        ).join('');
+        const opOptions = [
+            ['=', '等于'], ['!=', '不等于'], ['>', '大于'], ['<', '小于'],
+            ['>=', '≥'], ['<=', '≤'], ['contains', '包含']
+        ].map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+
+        ov.element.innerHTML = `
+            <div class="CUI-modal-content CUI-table-filter-panel">
+                <div class="CUI-table-filter-header">
+                    <h3>数据筛选</h3>
+                    <button class="CUI-table-filter-close" type="button">×</button>
+                </div>
+                <div class="CUI-table-filter-rules"></div>
+                <div class="CUI-table-filter-form">
+                    <select class="CUI-select CUI-filter-field">${fieldOptions}</select>
+                    <select class="CUI-select CUI-filter-op">${opOptions}</select>
+                    <input type="text" class="CUI-input CUI-filter-value" placeholder="筛选值">
+                    <button class="CUI-btn CUI-btn-sm CUI-btn-primary CUI-filter-add-btn" type="button">添加</button>
+                </div>
+                <div class="CUI-table-filter-actions">
+                    <button class="CUI-btn CUI-btn-sm CUI-btn-text CUI-filter-clear-all" type="button">清空全部</button>
+                    <button class="CUI-btn CUI-btn-sm CUI-btn-secondary CUI-filter-close-btn" type="button">关闭</button>
+                </div>
+            </div>
+        `;
+
+        const close = () => ov.close();
+        const renderRules = () => this._renderFilterRules(ov, entry);
+
+        ov.element.querySelector('.CUI-table-filter-close')?.addEventListener('click', close);
+        ov.element.querySelector('.CUI-filter-close-btn')?.addEventListener('click', close);
+        ov.element.querySelector('.CUI-filter-clear-all')?.addEventListener('click', () => {
+            this.dataLayer.clearFilters(this.tableId);
+            renderRules();
+        });
+        ov.element.querySelector('.CUI-filter-add-btn')?.addEventListener('click', () => {
+            const field = ov.element.querySelector('.CUI-filter-field').value;
+            const operator = ov.element.querySelector('.CUI-filter-op').value;
+            const value = ov.element.querySelector('.CUI-filter-value').value.trim();
+            if (!value) {
+                alert('请输入筛选值');
+                return;
+            }
+            this.dataLayer.filter(this.tableId, { field, operator, value });
+            ov.element.querySelector('.CUI-filter-value').value = '';
+            renderRules();
+        });
+
+        ov.element.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.CUI-filter-rule-remove');
+            if (removeBtn) {
+                const idx = parseInt(removeBtn.dataset.index, 10);
+                this.dataLayer.unfilter(this.tableId, idx);
+                renderRules();
+            }
+        });
+
+        renderRules();
+    }
+
+    /**
+     * 渲染筛选面板中已添加的规则列表
+     */
+    _renderFilterRules(ov, entry) {
+        const container = ov.element.querySelector('.CUI-table-filter-rules');
+        if (!container) return;
+        const rules = entry.filterRules || [];
+        const headers = entry.header || [];
+
+        if (rules.length === 0) {
+            container.innerHTML = '<div class="CUI-table-filter-empty">暂无筛选规则</div>';
+            return;
+        }
+
+        container.innerHTML = rules.map((r, i) => {
+            const h = headers.find(hh => hh.field === r.field);
+            const label = h ? (h.label || h.field) : r.field;
+            return `
+                <div class="CUI-table-filter-rule">
+                    <span class="CUI-filter-rule-text">${escapeHtml(label)} ${escapeHtml(this._filterOpLabel(r.operator))} ${escapeHtml(r.value)}</span>
+                    <button class="CUI-filter-rule-remove" type="button" data-index="${i}">×</button>
+                </div>
+            `;
+        }).join('');
     }
 
     _formatCellValue(value, type, header) {

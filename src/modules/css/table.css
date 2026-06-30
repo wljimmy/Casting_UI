@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.8.2
+ * Version: 0.9.0
  * Module: table.css
  * Description: 表格组件样式 - 统一边框折叠、背景色挂载与 sticky 多方向冻结层级
  * Copyright (c) 2026 Bingo工作室
@@ -65,6 +65,7 @@
 .CUI-table-status-bar {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--size-sm);
     font-size: var(--font-size-xs);
     color: var(--text-light);
@@ -76,6 +77,7 @@
 
 .CUI-table-pagination {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--size-sm);
     align-items: center;
     font-size: var(--font-size-sm);
@@ -86,6 +88,17 @@
     display: flex;
     align-items: center;
     gap: var(--size-xs);
+}
+
+/* "每页 [select] 条" / "跳至 [input] 页" 作为整体不拆行 */
+.CUI-pagination-size {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.CUI-pagination-jump {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .CUI-pagination-select {
@@ -616,4 +629,140 @@
 .CUI-table-cell-image {
     max-width: 100%;
     max-height: calc(1.5em * 3);
+}
+
+/* ============================================================
+ * 筛选 Overlay 面板
+ * ============================================================ */
+
+.CUI-table-filter-panel {
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.CUI-table-filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--size-md);
+}
+
+.CUI-table-filter-header h3 {
+    margin: 0;
+    font-size: var(--font-size-body);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.CUI-table-filter-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: 0;
+    transition: color var(--transition-normal);
+}
+
+.CUI-table-filter-close:hover {
+    color: var(--text-primary);
+}
+
+.CUI-table-filter-rules {
+    margin-bottom: var(--size-md);
+    min-height: 40px;
+}
+
+.CUI-table-filter-empty {
+    color: var(--text-light);
+    font-size: var(--font-size-sm);
+    padding: var(--size-sm) 0;
+    text-align: center;
+}
+
+.CUI-table-filter-rule {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--size-sm);
+    padding: var(--size-xs) var(--size-sm);
+    background-color: var(--bg-gray);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--size-xs);
+    font-size: var(--font-size-sm);
+}
+
+.CUI-filter-rule-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.CUI-filter-rule-remove {
+    background: none;
+    border: none;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: 0;
+    flex-shrink: 0;
+    transition: color var(--transition-normal);
+}
+
+.CUI-filter-rule-remove:hover {
+    color: var(--error-color);
+}
+
+.CUI-table-filter-form {
+    display: flex;
+    gap: var(--size-sm);
+    align-items: center;
+    margin-bottom: var(--size-md);
+    flex-wrap: wrap;
+}
+
+.CUI-table-filter-form .CUI-filter-field,
+.CUI-table-filter-form .CUI-filter-op {
+    flex-shrink: 0;
+}
+
+.CUI-table-filter-form .CUI-filter-value {
+    flex: 1;
+    min-width: 120px;
+}
+
+.CUI-table-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--size-sm);
+    padding-top: var(--size-sm);
+    border-top: 1px solid var(--border-color);
+}
+
+/* ============================================================
+ * 状态条条件标签
+ * ============================================================ */
+
+/* 状态条内条件标签：复用 CUI-badge-closeable，补充间距与最大宽度 */
+.CUI-table-status-bar .CUI-badge-closeable {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.CUI-table-status-bar .CUI-badge-close {
+    color: var(--text-light);
+    font-size: var(--font-size-sm);
+}
+
+.CUI-table-status-bar .CUI-badge-close:hover {
+    color: var(--error-color);
+    opacity: 1;
 }

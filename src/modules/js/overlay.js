@@ -32,9 +32,9 @@ class Overlay {
             // 检查是否已有遮罩，有则复用
             const existing = container.querySelector(':scope > .CUI-overlay');
             if (existing) {
-                existing.classList.remove('CUI-show', 'CUI-overlay-transparent', 'CUI-overlay-glass');
+                existing.classList.remove('show', 'CUI-overlay-transparent', 'CUI-overlay-glass');
                 existing.classList.add('CUI-overlay-' + type);
-                existing.classList.add('CUI-show');
+                existing.classList.add('show');
                 existing.style.zIndex = zIndex;
                 if (autoClose > 0) {
                     setTimeout(() => Overlay.removeFrom(container), autoClose);
@@ -76,7 +76,7 @@ class Overlay {
 
         // 显示遮罩
         setTimeout(() => {
-            overlay.classList.add('CUI-show');
+            overlay.classList.add('show');
         }, 10);
 
         // 自动关闭
@@ -112,8 +112,8 @@ class Overlay {
         // 查找直接子级遮罩 (可以有多级，但通常在容器下)
         const overlay = container.querySelector(':scope > .CUI-overlay') || container.querySelector('.CUI-overlay');
         if (overlay) {
-            overlay.classList.remove('CUI-show');
-            
+            overlay.classList.remove('show');
+
             setTimeout(() => {
                 if (overlay.parentNode) {
                     overlay.remove();
@@ -138,7 +138,7 @@ class Overlay {
      */
     static closeAll() {
         document.querySelectorAll('.CUI-overlay').forEach(overlay => {
-            overlay.classList.remove('CUI-show');
+            overlay.classList.remove('show');
             setTimeout(() => {
                 if (overlay.parentNode) {
                     overlay.remove();

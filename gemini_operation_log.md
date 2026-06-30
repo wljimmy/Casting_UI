@@ -327,3 +327,54 @@
   - Playwright 列宽对齐验证 `/tmp/table_colwidth_sync_verify.js`：22 列 thead/tbody/tfoot 计算宽度完全一致（前5列 80/100/64/208/144 px），`--cw` 变量已设置到全部 22 个 tbody td 和 22 个 tfoot 单元格，不匹配数 0
   - Node 单元测试 `23 通过 / 0 失败`
 - **状态**: 列宽架构重构完成，thead 定义一次，tbody/tfoot 通过 JS 同步自动对齐，消除冗余列宽定义。
+
+### [2026-06-30 表格工具栏与底栏功能增强 (v0.9.0)]
+- **操作人**: Trae
+- **操作内容**: 按用户需求增强表格工具栏（加导出/筛选按钮）和底栏状态条（加排序/筛选条件标签），并修复"每页 X 条"换行问题。
+  1. **工具栏增加导出/筛选按钮**（`table.js` `_injectToolbar`）：
+     - 在 `.CUI-table-toolbar-right`（原为空）加"筛选""导出"两个 `CUI-btn-sm CUI-btn-secondary` 按钮
+     - 事件用直接 `addEventListener`（与搜索框、分页按钮一致，属自定义业务逻辑）
+  2. **导出 CSV**（`table.js` 新增 `_exportCSV`）：
+     - 导出 `entry.filteredData` 全量筛选后数据（非当前页）+ `entry.header` 表头
+     - UTF-8 with BOM（`\uFEFF` 前缀）确保 Excel 正确识别中文
+     - 字段内逗号/引号用双引号包裹 + 内部双引号转义为 `""`（RFC 4180 标准）
+     - 文件名 `{tableId}_{YYYYMMDDHHmmss}.csv`，Blob + URL.createObjectURL + `<a download>` 下载
+     - 空数据 alert 提示
+  3. **筛选 Overlay 面板**（`table.js` 新增 `_openFilterPanel` + `_renderFilterRules` + `_filterOpLabel`）：
+     - 复用框架 `CUI.overlay({type:'glass'})` 创建全屏遮罩，注入 `.CUI-modal-content` 居中面板（max-width 600px）
+     - 字段下拉从 `entry.header` 生成，操作符下拉 7 种（等于/不等于/大于/小于/≥/≤/包含）
+     - 添加规则走 `dataLayer.filter`（触发 recalculate → filtered 事件 → 渲染层重绘）
+     - 已添加规则列表带×删除（走 `dataLayer.unfilter`），清空全部走 `dataLayer.clearFilters`
+     - 面板内点×/关闭按钮/清空全部均正确关闭或刷新
+  4. **底栏状态条条件标签**（`table.js` `_updatePagination` + `_bindPaginationEvents`）：
+     - 状态条在"显示 X-Y 条"后追加排序/筛选标签，复用 `CUI-badge-closeable`（outline + secondary 变体）
+     - 排序标签：`{字段label} ↑/↓`，data-sort-field 属性；筛选标签：`{字段label} {操作符中文} {值}`，data-filter-index 属性
+     - 点标签×：排序走 `dataLayer.unsort`，筛选走 `dataLayer.unfilter`，触发 recalculate + 重绘
+     - 标签容器 `flex-wrap: wrap` 允许换行，单标签 `max-width: 240px` + 省略号
+  5. **修复"每页 X 条"换行**（`table.css`）：
+     - `.CUI-pagination-size` / `.CUI-pagination-jump` 加 `white-space: nowrap; flex-shrink: 0`，确保"每页"+"下拉"+"条"作为整体不拆行
+     - `.CUI-table-status-bar` / `.CUI-table-pagination` 加 `flex-wrap: wrap` 作为窄屏兜底
+  6. **Registry/DataLayer 新增 API**：
+     - `CUITableRegistry.removeFilterRule(tableId, index)`：按索引删除单条筛选规则（参考 removeSortRule）
+     - `TableDataLayer.unfilter(tableId, index)`：删除筛选规则 + recalculate（参考 unsort）
+  7. **_partialUpdate 补 _updatePagination 调用**：
+     - 原 `_partialUpdate`（筛选/排序/分页变化走此路径）未调用 `_updatePagination`，导致底栏不随筛选/排序更新
+     - 补加 `this._updatePagination(entry)`，底栏条数和条件标签现在随数据状态实时刷新
+  8. **修复框架 overlay.js show 类名 bug**（既有 bug，筛选面板依赖）：
+     - 根因：`overlay.js` 加 `CUI-show` 类，但 `components.css` 定义的是 `.CUI-overlay.show`（无 CUI- 前缀），导致 overlay 永远不可见（opacity:0/visibility:hidden）
+     - 修复：`overlay.js` 5 处 `CUI-show` → `show`（L35/37/79/115/141）
+     - **遗留**：`message.js`（toast）和 `image-zoom.js` 存在同样 bug（`CUI-show` vs `.show`），本次未修，留待后续
+- **修改文件范围**:
+  - `src/modules/js/table.js`（v0.8.2 → v0.9.0）：Registry 加 removeFilterRule、DataLayer 加 unfilter、_injectToolbar 加按钮、新增 _exportCSV/_openFilterPanel/_renderFilterRules/_filterOpLabel、_updatePagination 加标签、_bindPaginationEvents 加×事件、_partialUpdate 补 _updatePagination
+  - `src/modules/css/table.css`（v0.8.2 → v0.9.0）：筛选面板样式、状态条标签样式、.CUI-pagination-size/jump nowrap
+  - `src/modules/js/overlay.js`（bug 修复）：5 处 CUI-show → show
+  - `src/test/table/test-table-modules.js`：内联副本同步 removeFilterRule/removeSortRule，新增 2 个测试用例（24/25）
+- **关键技术决策**:
+  - 筛选面板用 `CUI.overlay` 全屏遮罩 + `.CUI-modal-content` 居中容器，复用框架现有 overlay 组件而非自建弹窗
+  - 筛选/排序操作走 `dataLayer.filter/unfilter/unsort` 而非直接 `registry.addFilterRule`，确保触发 recalculate → filtered 事件 → 渲染层重绘
+  - 状态条标签用 `CUI-badge-closeable` 复用框架徽章组件，data-* 属性携带清除所需的 field/index
+  - CSV 导出用 UTF-8 BOM 解决 Excel 中文乱码，RFC 4180 转义规则
+- **验证**:
+  - Playwright 端到端验证 `/tmp/table_v09_verify.js`：`16 通过 / 0 失败`，覆盖工具栏按钮、筛选面板弹窗与表单、添加/删除筛选规则、状态条排序/筛选标签显示与×清除、"每页"窄屏不换行、列宽对齐回归
+  - Node 单元测试 `25 通过 / 0 失败`（新增 24/25 两个用例验证 removeFilterRule/removeSortRule）
+- **状态**: 工具栏与底栏功能增强完成，导出 CSV + 筛选面板 + 状态条条件标签 + 每页换行修复全部生效。遗留 message.js/image-zoom.js 的 CUI-show bug 待后续处理。

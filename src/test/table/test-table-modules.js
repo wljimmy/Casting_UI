@@ -89,6 +89,28 @@ class MockRegistry {
         return true;
     }
 
+    removeSortRule(tableId, field) {
+        const entry = this._store.get(tableId);
+        if (!entry) return false;
+        const before = entry.sortRules.length;
+        entry.sortRules = entry.sortRules.filter(r => r.field !== field);
+        if (entry.sortRules.length !== before) {
+            entry.updateTime = Date.now();
+            this._store.set(tableId, entry);
+        }
+        return true;
+    }
+
+    removeFilterRule(tableId, index) {
+        const entry = this._store.get(tableId);
+        if (!entry) return false;
+        if (index < 0 || index >= entry.filterRules.length) return false;
+        entry.filterRules.splice(index, 1);
+        entry.updateTime = Date.now();
+        this._store.set(tableId, entry);
+        return true;
+    }
+
     setSearchRules(tableId, rules) {
         const entry = this._store.get(tableId);
         if (!entry) return;
@@ -651,6 +673,43 @@ function runTests() {
         const entry2 = registry.get('test-table-23b');
         const debounceMs2 = entry2.config.longDebounce ? 1000 : 500;
         assert.strictEqual(debounceMs2, 500);
+    });
+
+    test('24. removeFilterRule - 按索引删除单条筛选规则', () => {
+        registry.register('test-table-24', { type: 'functional' });
+        registry.addFilterRule('test-table-24', { field: '年龄', operator: '>', value: '20' });
+        registry.addFilterRule('test-table-24', { field: '省份', operator: '=', value: '北京' });
+        const entry1 = registry.get('test-table-24');
+        assert.strictEqual(entry1.filterRules.length, 2);
+        /* 删除第一条（索引 0） */
+        const ok = registry.removeFilterRule('test-table-24', 0);
+        assert.strictEqual(ok, true);
+        const entry2 = registry.get('test-table-24');
+        assert.strictEqual(entry2.filterRules.length, 1);
+        assert.strictEqual(entry2.filterRules[0].field, '省份');
+        /* 越界索引返回 false 且不修改 */
+        const ok2 = registry.removeFilterRule('test-table-24', 99);
+        assert.strictEqual(ok2, false);
+        const entry3 = registry.get('test-table-24');
+        assert.strictEqual(entry3.filterRules.length, 1);
+    });
+
+    test('25. removeSortRule - 按字段删除单条排序规则', () => {
+        registry.register('test-table-25', { type: 'functional' });
+        registry.addSortRule('test-table-25', { field: '薪资', order: 'desc' });
+        registry.addSortRule('test-table-25', { field: '年龄', order: 'asc' });
+        const entry1 = registry.get('test-table-25');
+        assert.strictEqual(entry1.sortRules.length, 2);
+        /* 删除薪资排序 */
+        const ok = registry.removeSortRule('test-table-25', '薪资');
+        assert.strictEqual(ok, true);
+        const entry2 = registry.get('test-table-25');
+        assert.strictEqual(entry2.sortRules.length, 1);
+        assert.strictEqual(entry2.sortRules[0].field, '年龄');
+        /* 删除不存在的字段，长度不变 */
+        registry.removeSortRule('test-table-25', '不存在');
+        const entry3 = registry.get('test-table-25');
+        assert.strictEqual(entry3.sortRules.length, 1);
     });
 
     console.log('\n====================================');
