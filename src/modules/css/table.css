@@ -261,13 +261,14 @@
 /* 状态展示：空数据单元格撑满整行（与表格同宽）。
  * 选择器提升为 .CUI-table td.CUI-table-empty（特异性 0,2,1 > 0,1,1）
  * 以覆盖 .CUI-table td 的 flex-shrink:0 和 width:var(--cw) 基础规则。
- * JS 同步的 --cw 在此显式 width:auto 失效，由 flex:1 撑满 tr。 */
+ * JS 同步的 --cw 在此显式 width:auto 失效，由 flex:1 撑满 tr。
+ * 文字左对齐：宽表格横向滚动时，居中文字会落到视口外不可见。 */
 .CUI-table td.CUI-table-empty {
     width: auto;
     max-width: none;
     flex: 1;
-    justify-content: center;
-    text-align: center;
+    justify-content: flex-start;
+    text-align: left;
     padding: var(--size-xl) !important;
     color: var(--text-light);
 }
