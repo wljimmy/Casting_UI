@@ -378,3 +378,20 @@
   - Playwright 端到端验证 `/tmp/table_v09_verify.js`：`16 通过 / 0 失败`，覆盖工具栏按钮、筛选面板弹窗与表单、添加/删除筛选规则、状态条排序/筛选标签显示与×清除、"每页"窄屏不换行、列宽对齐回归
   - Node 单元测试 `25 通过 / 0 失败`（新增 24/25 两个用例验证 removeFilterRule/removeSortRule）
 - **状态**: 工具栏与底栏功能增强完成，导出 CSV + 筛选面板 + 状态条条件标签 + 每页换行修复全部生效。遗留 message.js/image-zoom.js 的 CUI-show bug 待后续处理。
+
+### [2026-06-30 修复"暂无数据"容器未撑满表格宽度 (v0.9.1)]
+- **操作人**: Trae
+- **操作内容**: 修复空数据状态下"暂无数据"提示容器只显示 320px 宽、未左右撑满表格的问题。
+  - **根因（三重叠加）**：
+    1. **CSS 特异性不足**：`.CUI-table-empty`（0,1,0）无法覆盖 `.CUI-table td`（0,1,1）的 `flex-shrink:0` 和 `width:var(--cw)`
+    2. **max-width: 320px 限制**：td 基础规则有 `max-width: 320px`，即使 flex:1 生效也撑不过 320px
+    3. **JS 副作用**：`_applyFreezeLayout` 给空数据 td 加了 `CUI-freeze-first`（sticky+阴影），`_syncColumnWidths` 注入了 `--cw:80px`
+  - **修复**：
+    1. CSS 选择器提升为 `.CUI-table td.CUI-table-empty`（0,2,1 > 0,1,1），显式设 `width:auto; max-width:none; flex:1` 覆盖基础规则
+    2. `_applyFreezeLayout` 跳过含 `.CUI-table-empty` 的 tr，避免 sticky/阴影副作用
+    3. `_syncColumnWidths` 跳过空数据行，避免注入 `--cw` 覆盖 flex:1 撑满效果
+- **修改文件范围**:
+  - `src/modules/css/table.css`（v0.9.0 → v0.9.1）
+  - `src/modules/js/table.js`（v0.9.0 → v0.9.1）
+- **验证**: Playwright 验证 `/tmp/table_empty_verify.js`：表格宽 3414px，"暂无数据"容器宽 3414px，左右偏移 0，无 freeze-first 类，无 --cw 变量。单元测试 25/25 通过。
+- **状态**: 空数据容器撑满表格宽度，与表格同宽。

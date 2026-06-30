@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.9.0
+ * Version: 0.9.1
  * Module: table.css
  * Description: 表格组件样式 - 统一边框折叠、背景色挂载与 sticky 多方向冻结层级
  * Copyright (c) 2026 Bingo工作室
@@ -258,9 +258,15 @@
     word-break: break-word;
 }
 
-/* 状态展示 */
-.CUI-table-empty {
+/* 状态展示：空数据单元格撑满整行（与表格同宽）。
+ * 选择器提升为 .CUI-table td.CUI-table-empty（特异性 0,2,1 > 0,1,1）
+ * 以覆盖 .CUI-table td 的 flex-shrink:0 和 width:var(--cw) 基础规则。
+ * JS 同步的 --cw 在此显式 width:auto 失效，由 flex:1 撑满 tr。 */
+.CUI-table td.CUI-table-empty {
+    width: auto;
+    max-width: none;
     flex: 1;
+    justify-content: center;
     text-align: center;
     padding: var(--size-xl) !important;
     color: var(--text-light);

@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.9.0
+ * Version: 0.9.1
  * Module: table.js
  * Description: 数据表格组件 - 标准化分层架构、数据与视图分离、双向实时同步
  * Architecture: 注册表 + 数据层 + 渲染层 + 初始化模块 四合一
@@ -667,6 +667,8 @@ class TableRenderLayer {
         const widths = Array.from(ths).map(th => window.getComputedStyle(th).width);
 
         this.element.querySelectorAll('tbody tr').forEach(tr => {
+            /* 空数据行只有单个占满整行的 td，跳过 --cw 注入避免覆盖 flex:1 撑满效果 */
+            if (tr.querySelector('.CUI-table-empty')) return;
             tr.querySelectorAll('td').forEach((td, i) => {
                 if (widths[i]) td.style.setProperty('--cw', widths[i]);
             });
@@ -816,6 +818,8 @@ class TableRenderLayer {
         trs.forEach(tr => {
             const cells = tr.querySelectorAll('th, td');
             if (cells.length === 0) return;
+            /* 空数据行只有单个占满整行的 td，跳过冻结避免 sticky/阴影副作用 */
+            if (tr.querySelector('.CUI-table-empty')) return;
 
             if (this.freezeConfig.firstCol) {
                 cells[0]?.classList.add('CUI-freeze-first');
