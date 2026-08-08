@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新组件测试 | Casting UI</title>
+    <title>表格冻结功能测试 | Casting UI</title>
     <link rel="stylesheet" href="/modules/css/core.css">
     <link rel="stylesheet" href="/modules/css/container.css">
     <link rel="stylesheet" href="/modules/css/layout.css">
@@ -21,205 +21,368 @@
     <link rel="stylesheet" href="/modules/css/color-picker.css">
     <link rel="stylesheet" href="/modules/css/theme-manager.css">
     <link rel="stylesheet" href="/modules/css/table.css">
-    <style>
-        th:first-child ,
-        td:first-child {
-            position: sticky;
-            left: 0;
-            z-index: 11;
-             box-shadow:  2px 0px 3px var(--gray-300);
-        }
-        thead th{
-            box-shadow:  0px 2px 3px var(--gray-300);
-        }
-        th:last-child ,
-        td:last-child {
-            position: sticky;
-            right: 0;
-            z-index: 11;
-             box-shadow:  -2px 0px 3px var(--gray-300);
-        }
-    </style>
 </head>
 
 <body class="CUI-container">
     <div class="CUI-wrap">
         <header>
-            <div class="CUI-grid  CUI-grid-v-center">
+            <div class="CUI-grid CUI-grid-v-center">
                 <div>
                     <h2>Casting UI</h2>
-                    <p>Input 新组件测试</p>
+                    <p>表格冻结功能测试（使用外部测试数据，每页50行）</p>
                 </div>
             </div>
         </header>
 
         <main class="CUI-content">
             <section class="CUI-section">
-                <h2>表格组件测试 </h2>
-                <div class="CUI-table-container" style="
-                                                        height: 500px; 
-                                                        overflow:scroll; 
-                                                        width: 100%;
-                                                        height: 20em;
-                                                        
-                                                        ">
-                    <table class="CUI-table" style="table-layout: auto;
-                                                    width: max-content;
-                                                   
-                                                     border-spacing: 0; 
-                                                     border-collapse: separate;
-                                                    "
-                         data-table="{
-
-                                    }">
-
-                        <thead style="top:0;position: sticky;z-index: 12;">
+                <h2>测试用例 1：简单冻结表头</h2>
+                <p>设置 data-freeze-header="true"，垂直滚动时表头固定</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test1"
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"header":true}}'>
+                        <thead>
                             <tr>
-                                <th >姓名</th>
-                                <th>年龄</th>
-                                <th>性别</th>
-                                <th>操作</th>
-                                <th>状态</th>
-                                <th>创建时间</th>
-                                <th>更新时间</th>
-                                <th>删除</th>
-                                <th>恢复</th>
-                                <th>操作</th>
-                                <th>状态</th>
-                                <th>操作</th>
-                                <th>状态</th>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td >张三</td>
-                                <td>25</td>
-                                <td>男</td>
-                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
-                                <td><span class="CUI-status CUI-status-success">正常</span></td>
-                                <td>2024-01-15 09:30:00</td>
-                                <td>2024-06-20 14:22:10</td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
-                                <td><span class="CUI-status CUI-status-active">启用</span></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
-                                <td><span class="CUI-status CUI-status-online">在线</span></td>
-                            </tr>
-                            <tr>
-                                <td >李四</td>
-                                <td>32</td>
-                                <td>女</td>
-                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
-                                <td><span class="CUI-status CUI-status-success">正常</span></td>
-                                <td>2023-08-22 11:15:30</td>
-                                <td>2024-05-18 09:45:22</td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
-                                <td><span class="CUI-status CUI-status-active">启用</span></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
-                                <td><span class="CUI-status CUI-status-offline">离线</span></td>
-                            </tr>
-                            <tr>
-                                <td >王五</td>
-                                <td>28</td>
-                                <td>男</td>
-                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
-                                <td><span class="CUI-status CUI-status-warning">待审核</span></td>
-                                <td>2024-02-10 16:45:00</td>
-                                <td>2024-06-15 11:30:45</td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
-                                <td><span class="CUI-status CUI-status-pending">待激活</span></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
-                                <td><span class="CUI-status CUI-status-online">在线</span></td>
-                            </tr>
-                            <tr>
-                                <td >赵六</td>
-                                <td>35</td>
-                                <td>女</td>
-                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
-                                <td><span class="CUI-status CUI-status-error">已禁用</span></td>
-                                <td>2022-11-05 08:20:15</td>
-                                <td>2024-04-12 17:10:30</td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary">恢复</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
-                                <td><span class="CUI-status CUI-status-inactive">禁用</span></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
-                                <td><span class="CUI-status CUI-status-offline">离线</span></td>
-                            </tr>
-                            <tr>
-                                <td>钱七</td>
-                                <td>22</td>
-                                <td>男</td>
-                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
-                                <td><span class="CUI-status CUI-status-success">正常</span></td>
-                                <td>2024-05-20 13:00:00</td>
-                                <td>2024-06-22 10:15:20</td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
-                                <td><span class="CUI-status CUI-status-active">启用</span></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
-                                <td><span class="CUI-status CUI-status-online">在线</span></td>
-                            </tr>
-                            <tr>
-                                <td>孙八</td>
-                                <td>29</td>
-                                <td>女</td>
-                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
-                                <td><span class="CUI-status CUI-status-success">正常</span></td>
-                                <td>2023-12-01 10:30:45</td>
-                                <td>2024-06-18 15:40:10</td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
-                                <td><span class="CUI-status CUI-status-active">启用</span></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
-                                <td><span class="CUI-status CUI-status-online">在线</span></td>
-                            </tr>
-                            <tr>
-                                <td>周九</td>
-                                <td>41</td>
-                                <td>男</td>
-                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
-                                <td><span class="CUI-status CUI-status-warning">待审核</span></td>
-                                <td>2023-06-15 09:15:20</td>
-                                <td>2024-05-30 12:25:35</td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
-                                <td><span class="CUI-status CUI-status-pending">待激活</span></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
-                                <td><span class="CUI-status CUI-status-offline">离线</span></td>
-                            </tr>
-                            <tr>
-                                <td>吴十</td>
-                                <td>26</td>
-                                <td>女</td>
-                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
-                                <td><span class="CUI-status CUI-status-success">正常</span></td>
-                                <td>2024-03-08 14:20:30</td>
-                                <td>2024-06-21 08:50:15</td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
-                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
-                                <td><span class="CUI-status CUI-status-active">启用</span></td>
-                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
-                                <td><span class="CUI-status CUI-status-offline">离线</span></td>
-                        </tbody>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="10">汇总</td></tr>
+                        </tfoot>
                     </table>
                 </div>
+            </section>
 
+            <section class="CUI-section">
+                <h2>测试用例 2：简单冻结尾部汇总</h2>
+                <p>设置 data-freeze-footer="true"，垂直滚动时表尾固定</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test2"
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"header":true,"footer":true}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number" data-CUI-summary="avg">年龄</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency" data-CUI-summary="sum">薪资</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td>平均</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                            </tr>
+                            <tr>
+                                <td>总计</td><td></td><td></td><td></td><td></td><td></td><td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
 
+            <section class="CUI-section">
+                <h2>测试用例 3：简单冻结首列</h2>
+                <p>设置 data-frozen-left="true"，水平滚动时首列固定</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test3"
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"left":true}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                                <th data-CUI-field="专业" data-CUI-type="text" style="width: 140px;">专业</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="16">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 4：简单冻结尾列</h2>
+                <p>设置 data-frozen-right="true"，水平滚动时尾列固定</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test4"
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"right":true}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="15">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 5：高级模式 - 左侧提示列</h2>
+                <p>设置 data-frozen-left='["ID", "姓名"]'，水平滚动时显示提示列（自动冻结表头）</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test5"
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"left":["ID","姓名"]}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                                <th data-CUI-field="专业" data-CUI-type="text" style="width: 140px;">专业</th>
+                                <th data-CUI-field="毕业院校" data-CUI-type="text" style="width: 220px;">毕业院校</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="17">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 6：高级模式 - 右侧提示列</h2>
+                <p>设置 data-frozen-right='["职位", "薪资"]'，水平滚动时显示右侧提示列</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test6"
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"right":["职位","薪资"]}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="15">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 7：组合冻结 - 表头+表尾+首列</h2>
+                <p>同时设置 data-freeze-header、data-freeze-footer、data-frozen-left="true"</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test7"
+                       
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"header":true,"footer":true,"left":true}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number" data-CUI-summary="avg">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency" data-CUI-summary="sum">薪资</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td>平均</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                            </tr>
+                            <tr>
+                                <td>总计</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 8：组合冻结 - 提示列+表头+表尾</h2>
+                <p>设置 data-frozen-left='["ID", "姓名"]'、data-freeze-header、data-freeze-footer</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test8"
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"footer":true,"left":["ID","姓名"]}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number" data-CUI-summary="avg">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency" data-CUI-summary="sum">薪资</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td>平均</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                            </tr>
+                            <tr>
+                                <td>总计</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 9：多级表头 + 冻结</h2>
+                <p>多级表头结构 + data-frozen-left="true"，验证表头完整性</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test9"
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"header":true,"left":true}}'>
+                        <thead>
+                            <tr>
+                                <th colspan="2" style="width: 164px;">基本信息</th>
+                                <th colspan="3" style="width: 384px;">联系方式</th>
+                                <th colspan="2" style="width: 230px;">工作信息</th>
+                                <th colspan="2" style="width: 230px;">学历信息</th>
+                            </tr>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                                <th data-CUI-field="专业" data-CUI-type="text" style="width: 140px;">专业</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr>
+                                <td>汇总</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 10：旧参数兼容测试</h2>
+                <p>使用旧参数 data-freeze-first-col="true"，应自动映射为新参数</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped" id="test10"
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"left":true}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="10">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
             </section>
         </main>
     </div>
 
-    <script type="module" src="/modules/js/index.js">
-</script>
+    <script type="module" src="/modules/js/index.js"></script>
 </body>
+
 </html>

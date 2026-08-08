@@ -30,18 +30,15 @@
         <main class="CUI-content">
             <section class="CUI-section">
                 <table class="CUI-table" id="simple-table"
-                    data-freeze-header="true"
-                    data-freeze-first-col="true"
-                    data-freeze-last-col="false"
-                    data-freeze-footer="true"
-                    data-cui-table='{"type":"functional","striped":true,"pageSize":10}'>
+                    data-CUI-dataTable="true"
+                    data-CUI-config='{"type":"functional","striped":true,"pageSize":10,"freeze":{"header":true,"footer":true,"left":true}}'>
                     <thead>
                         <tr>
-                            <th data-field="ID" data-type="number">ID</th>
-                            <th data-field="姓名" data-type="text">姓名</th>
-                            <th data-field="年龄" data-type="number" data-summary="sum">年龄</th>
-                            <th data-field="薪资" data-type="currency" data-summary="sum">薪资</th>
-                            <th data-field="手机号" data-type="phone">手机号</th>
+                            <th data-CUI-field="ID" data-CUI-type="number">ID</th>
+                            <th data-CUI-field="姓名" data-CUI-type="text">姓名</th>
+                            <th data-CUI-field="年龄" data-CUI-type="number" data-CUI-summary="sum">年龄</th>
+                            <th data-CUI-field="薪资" data-CUI-type="currency" data-CUI-summary="sum">薪资</th>
+                            <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
                         </tr>
                     </thead>
                     <tbody>

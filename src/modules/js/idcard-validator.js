@@ -10,7 +10,7 @@
  * @dependency: location-data
  * 
  * CUI.idcardValidator 模块
- * 触发条件：data-validate="idcard-adv"
+ * 触发条件：data-CUI-validate="idcard-adv"
  * 
  * 功能：
  *   1. 身份证号码分段解析（省/市/区/生日/性别）
@@ -327,14 +327,14 @@ const CUIIdCardValidator = {
         window.__CUI_IDCARD_VALIDATOR_INITIALIZED__ = true;
         
         // 先扫描现有的 idcard-adv 元素，设置默认提示/错误信息
-        const existingWrappers = document.querySelectorAll('.CUI-input-box[data-validate="idcard-adv"]');
+        const existingWrappers = document.querySelectorAll('.CUI-input-box[data-CUI-validate="idcard-adv"]');
         existingWrappers.forEach(wrapper => {
             this._setupDefaultMessages(wrapper);
         });
         
         // 使用 DOMObserver 监听新添加的 idcard-adv 元素
         if (window.CUI && window.CUI.CastingDOMObserver) {
-            window.CUI.CastingDOMObserver.addSelector('.CUI-input-box[data-validate="idcard-adv"]', (wrapper) => {
+            window.CUI.CastingDOMObserver.addSelector('.CUI-input-box[data-CUI-validate="idcard-adv"]', (wrapper) => {
                 this._setupDefaultMessages(wrapper);
             });
         }
@@ -349,9 +349,9 @@ const CUIIdCardValidator = {
             let validateType = null;
             
             if (wrapper) {
-                validateType = wrapper.dataset.validate;
+                validateType = wrapper.dataset.CUIValidate;
             } else {
-                validateType = target.dataset.validate;
+                validateType = target.dataset.CUIValidate;
             }
             
             if (validateType !== 'idcard-adv') return;
@@ -372,9 +372,9 @@ const CUIIdCardValidator = {
             let validateType = null;
             
             if (wrapper) {
-                validateType = wrapper.dataset.validate;
+                validateType = wrapper.dataset.CUIValidate;
             } else {
-                validateType = target.dataset.validate;
+                validateType = target.dataset.CUIValidate;
             }
             
             if (validateType !== 'idcard-adv') return;

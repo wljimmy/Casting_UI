@@ -30,13 +30,13 @@
 }
 
 /* 不同列数 */
-.CUI-form[data-form-cols="8"] > div {
+.CUI-form[data-CUI-form-cols="8"] > div {
     grid-template-columns: repeat(8, 1fr);
 }
-.CUI-form[data-form-cols="4"] > div {
+.CUI-form[data-CUI-form-cols="4"] > div {
     grid-template-columns: repeat(4, 1fr);
 }
-.CUI-form[data-form-cols="2"] > div {
+.CUI-form[data-CUI-form-cols="2"] > div {
     grid-template-columns: repeat(2, 1fr);
 }
 
@@ -60,22 +60,22 @@
 
 /* 不同列数下的默认span */
 
-.CUI-form[data-form-cols="2"] > div > .CUI-input,
-.CUI-form[data-form-cols="2"] > div > .CUI-input-box {
+.CUI-form[data-CUI-form-cols="2"] > div > .CUI-input,
+.CUI-form[data-CUI-form-cols="2"] > div > .CUI-input-box {
     grid-column: span 1;
 }
 
 /* 标签在上 */
-.CUI-form > div[data-label-position="top"] {
+.CUI-form > div[data-CUI-label-position="top"] {
     align-items: flex-start;
 }
 
-.CUI-form > div[data-label-position="top"] > div {
+.CUI-form > div[data-CUI-label-position="top"] > div {
     grid-column: 1 / -1;
 }
 
-.CUI-form > div[data-label-position="top"] > .CUI-input,
-.CUI-form > div[data-label-position="top"] > .CUI-input-box {
+.CUI-form > div[data-CUI-label-position="top"] > .CUI-input,
+.CUI-form > div[data-CUI-label-position="top"] > .CUI-input-box {
     grid-column: 1 / -1;
 }
 
@@ -88,13 +88,13 @@
 }
 
 /* 按钮容器列数 */
-.CUI-form[data-form-cols="8"] > .CUI-form-actions {
+.CUI-form[data-CUI-form-cols="8"] > .CUI-form-actions {
     grid-template-columns: repeat(8, 1fr);
 }
-.CUI-form[data-form-cols="4"] > .CUI-form-actions {
+.CUI-form[data-CUI-form-cols="4"] > .CUI-form-actions {
     grid-template-columns: repeat(4, 1fr);
 }
-.CUI-form[data-form-cols="2"] > .CUI-form-actions {
+.CUI-form[data-CUI-form-cols="2"] > .CUI-form-actions {
     grid-template-columns: repeat(2, 1fr);
 }
 

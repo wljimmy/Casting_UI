@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.9.1
+ * Version: 0.11.0
  * Module: table.js
  * Description: 数据表格组件 - 标准化分层架构、数据与视图分离、双向实时同步
  * Architecture: 注册表 + 数据层 + 渲染层 + 初始化模块 四合一
@@ -64,6 +64,9 @@ class CUITableRegistry {
         }
 
         defaultEntry.config = Object.assign(defaultEntry.config, config);
+        if (config.pageSize) {
+            defaultEntry.pageState.pageSize = config.pageSize;
+        }
         this._store.set(tableId, defaultEntry);
         this._notify(tableId, 'config');
     }
@@ -514,6 +517,43 @@ class TableDataLayer {
  * 职责：只读注册表数据、局部热更新、全量重建、500ms防抖
  * ============================================================
  */
+
+/**
+ * 通用遮罩组件 - 单例
+ * 渲染期间覆盖指定容器，防止用户操作。所有组件共用同一个遮罩实例。
+ * 单一遮罩：如果已经打开，再次调用 show() 不会重复创建，保持原状。
+ * 用法: CUI.loadingOverlay.show(wrapper) / CUI.loadingOverlay.hide()
+ */
+if (!window.CUI.loadingOverlay) {
+    let _el = null;
+    let _visible = false;
+    window.CUI.loadingOverlay = {
+        show(wrapper) {
+            if (_visible) return; // 已打开则不再重复操作
+            if (!_el) {
+                _el = document.createElement('div');
+                _el.className = 'CUI-table-loading-overlay';
+                _el.innerHTML = '<div class="CUI-loading CUI-loading-lg"></div>';
+            }
+            if (wrapper && wrapper.style) {
+                if (wrapper.style.position !== 'absolute' && wrapper.style.position !== 'fixed') {
+                    wrapper.style.position = 'relative';
+                }
+                wrapper.appendChild(_el);
+            }
+            _el.style.display = 'flex';
+            _visible = true;
+        },
+        hide() {
+            if (!_visible) return; // 已关闭则不再重复操作
+            if (_el && _el.parentNode) {
+                _el.parentNode.removeChild(_el);
+            }
+            _visible = false;
+        }
+    };
+}
+
 class TableRenderLayer {
     constructor(registry, dataLayer, element) {
         this.registry = registry;
@@ -521,7 +561,19 @@ class TableRenderLayer {
         this.element = element;
         this.tableId = element.id;
         this.freezeConfig = this._extractFreezeConfig();
+        // Apply freeze related classes on the table element (only add advanced classes, no hidden classes)
+        if (this.freezeConfig.frozenLeft && this.freezeConfig.frozenLeft.mode === 'advanced') {
+            this.element.classList.add('CUI-advanced-left');
+        } else {
+            this.element.classList.remove('CUI-advanced-left');
+        }
+        if (this.freezeConfig.frozenRight && this.freezeConfig.frozenRight.mode === 'advanced') {
+            this.element.classList.add('CUI-advanced-right');
+        } else {
+            this.element.classList.remove('CUI-advanced-right');
+        }
         this.originalTfootContent = {};
+        this.summaryMethods = {}; // 存储每列用户选择的汇总方式
         this.debounceTimer = null;
         this.lastHeaderHash = '';
         /* 防抖时长：默认 500ms，配置 longDebounce:true 时为 1000ms */
@@ -531,16 +583,52 @@ class TableRenderLayer {
     }
 
     _extractFreezeConfig() {
+        const entry = this.registry.get(this.tableId);
+        const freeze = entry?.config?.freeze || {};
+
+        const parseFrozenSide = (value) => {
+            if (value === true || value === 'true') return { fields: [], mode: 'simple' };
+            if (Array.isArray(value)) {
+                if (value.length === 0) return { fields: [], mode: 'none' };
+                return { fields: value, mode: 'advanced' };
+            }
+            return { fields: [], mode: 'none' };
+        };
+
+        const frozenLeft = parseFrozenSide(freeze.left);
+        const frozenRight = parseFrozenSide(freeze.right);
+
+        const parseWidth = (value) => {
+            const w = parseInt(value, 10);
+            if (isNaN(w)) return 80;
+            return Math.max(40, Math.min(120, w));
+        };
+
+        const hasAdvancedFreeze = frozenLeft.mode === 'advanced' || frozenRight.mode === 'advanced';
+        const mustFreezeHeader = hasAdvancedFreeze;
+
+        const simpleHeader = freeze.header === true;
+        const footer = freeze.footer === true;
+
+        const firstCol = frozenLeft.mode === 'simple' || frozenLeft.mode === 'advanced';
+        const lastCol = frozenRight.mode === 'simple' || frozenRight.mode === 'advanced';
+
         return {
-            header: this.element.getAttribute('data-freeze-header') === 'true',
-            footer: this.element.getAttribute('data-freeze-footer') === 'true',
-            firstCol: this.element.getAttribute('data-freeze-first-col') === 'true',
-            lastCol: this.element.getAttribute('data-freeze-last-col') === 'true'
+            header: simpleHeader || mustFreezeHeader,
+            footer,
+            firstCol,
+            lastCol,
+            frozenLeft: { ...frozenLeft, width: parseWidth(freeze.leftWidth) },
+            frozenRight: { ...frozenRight, width: parseWidth(freeze.rightWidth) },
+            mergeCells: Array.isArray(freeze.mergeCells) ? freeze.mergeCells : []
         };
     }
 
     init() {
         this.initWrapper();
+        // 仅在高级冻结启用时添加对应方向的占位
+        this._addLeftHintPlaceholders();
+        this._addRightHintPlaceholders();
         this.initOriginalTfoot();
         this.bindRegistryListeners();
     }
@@ -562,6 +650,149 @@ class TableRenderLayer {
         if (!this.element.querySelector('tbody')) {
             this.element.appendChild(document.createElement('tbody'));
         }
+    }
+
+    // 为左侧提示列在表头和表尾插入占位 <th>（使用rowspan合并）
+    _addLeftHintPlaceholders() {
+        if (!(this.freezeConfig.frozenLeft && this.freezeConfig.frozenLeft.mode === 'advanced')) return;
+        const addPlaceholders = (section) => {
+            const el = this.element.querySelector(section);
+            if (!el) return;
+            const rows = el.querySelectorAll('tr');
+            if (rows.length === 0) return;
+            const th = document.createElement('th');
+            th.className = 'CUI-hint-header-left';
+            th.setAttribute('rowspan', rows.length);
+            rows[0].insertBefore(th, rows[0].firstChild);
+        };
+        addPlaceholders('thead');
+        addPlaceholders('tfoot');
+    }
+
+    // 为右侧提示列在表头和表尾插入占位 <th>（使用rowspan合并）
+    _addRightHintPlaceholders() {
+        if (!(this.freezeConfig.frozenRight && this.freezeConfig.frozenRight.mode === 'advanced')) return;
+        const addPlaceholders = (section) => {
+            const el = this.element.querySelector(section);
+            if (!el) return;
+            const rows = el.querySelectorAll('tr');
+            if (rows.length === 0) return;
+            const th = document.createElement('th');
+            th.className = 'CUI-hint-header-right';
+            th.setAttribute('rowspan', rows.length);
+            rows[0].appendChild(th);
+        };
+        addPlaceholders('thead');
+        addPlaceholders('tfoot');
+    }
+
+    // 填充左侧提示列（如果启用高级模式）
+    _populateLeftHintColumn(headers) {
+        const leftFields = (this.freezeConfig.frozenLeft && this.freezeConfig.frozenLeft.mode === 'advanced') ? this.freezeConfig.frozenLeft.fields : [];
+        if (!leftFields.length) return;
+        const thead = this.element.querySelector('thead');
+        const rows = thead ? thead.querySelectorAll('tr') : [];
+        const lastHeaderRow = rows.length ? rows[rows.length - 1] : null;
+        const fieldMap = {};
+        if (lastHeaderRow) {
+            lastHeaderRow.querySelectorAll('th').forEach(th => {
+                const field = th.getAttribute('data-CUI-field') || th.textContent.trim();
+                const label = th.textContent.trim();
+                fieldMap[field] = label;
+            });
+        }
+        const renderText = (fields) => fields.map(f => fieldMap[f] || f).join(' · ');
+        // 填充 thead 第一行左侧占位单元格（使用rowspan合并，只填充一个）
+        if (rows.length > 0) {
+            const first = rows[0].firstElementChild;
+            if (first) first.textContent = renderText(leftFields);
+        }
+        // 填充 tfoot 第一行左侧占位单元格
+        const tfoot = this.element.querySelector('tfoot');
+        if (tfoot) {
+            const tfootRows = tfoot.querySelectorAll('tr');
+            if (tfootRows.length > 0) {
+                const first = tfootRows[0].firstElementChild;
+                if (first) first.textContent = renderText(leftFields);
+            }
+        }
+    }
+
+    // 填充右侧提示列（如果启用高级模式）
+    _populateRightHintColumn(headers) {
+        const rightFields = (this.freezeConfig.frozenRight && this.freezeConfig.frozenRight.mode === 'advanced') ? this.freezeConfig.frozenRight.fields : [];
+        if (!rightFields.length) return;
+        const thead = this.element.querySelector('thead');
+        const rows = thead ? thead.querySelectorAll('tr') : [];
+        const lastHeaderRow = rows.length ? rows[rows.length - 1] : null;
+        const fieldMap = {};
+        if (lastHeaderRow) {
+            lastHeaderRow.querySelectorAll('th').forEach(th => {
+                const field = th.getAttribute('data-CUI-field') || th.textContent.trim();
+                const label = th.textContent.trim();
+                fieldMap[field] = label;
+            });
+        }
+        const renderText = (fields) => fields.map(f => fieldMap[f] || f).join(' · ');
+        // 填充 thead 第一行右侧占位单元格（使用rowspan合并，只填充一个）
+        if (rows.length > 0) {
+            const last = rows[0].lastElementChild;
+            if (last) last.textContent = renderText(rightFields);
+        }
+        // 填充 tfoot 第一行右侧占位单元格
+        const tfoot = this.element.querySelector('tfoot');
+        if (tfoot) {
+            const tfootRows = tfoot.querySelectorAll('tr');
+            if (tfootRows.length > 0) {
+                const last = tfootRows[0].lastElementChild;
+                if (last) last.textContent = renderText(rightFields);
+            }
+        }
+    }
+
+    _setHintColumnWidths() {
+        const { frozenLeft, frozenRight } = this.freezeConfig;
+        
+        if (frozenLeft.mode === 'advanced') {
+            this.element.querySelectorAll('.CUI-hint-header-left, .CUI-hint-cell-left').forEach(cell => {
+                cell.style.width = `${frozenLeft.width}px`;
+            });
+        }
+        
+        if (frozenRight.mode === 'advanced') {
+            this.element.querySelectorAll('.CUI-hint-header-right, .CUI-hint-cell-right').forEach(cell => {
+                cell.style.width = `${frozenRight.width}px`;
+            });
+        }
+    }
+
+    setHintColumnWidth(direction, width) {
+        const parsedWidth = parseInt(width, 10);
+        if (isNaN(parsedWidth)) return false;
+        
+        const clampedWidth = Math.max(40, Math.min(120, parsedWidth));
+        
+        if (direction === 'left') {
+            if (!this.freezeConfig.frozenLeft || this.freezeConfig.frozenLeft.mode !== 'advanced') {
+                return false;
+            }
+            this.freezeConfig.frozenLeft.width = clampedWidth;
+            this.element.querySelectorAll('.CUI-hint-header-left, .CUI-hint-cell-left').forEach(cell => {
+                cell.style.width = `${clampedWidth}px`;
+            });
+        } else if (direction === 'right') {
+            if (!this.freezeConfig.frozenRight || this.freezeConfig.frozenRight.mode !== 'advanced') {
+                return false;
+            }
+            this.freezeConfig.frozenRight.width = clampedWidth;
+            this.element.querySelectorAll('.CUI-hint-header-right, .CUI-hint-cell-right').forEach(cell => {
+                cell.style.width = `${clampedWidth}px`;
+            });
+        } else {
+            return false;
+        }
+        
+        return true;
     }
 
     initOriginalTfoot() {
@@ -596,18 +827,51 @@ class TableRenderLayer {
 
     _scheduleUpdate() {
         clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(() => this.render(), this.debounceMs);
+        this.debounceTimer = setTimeout(() => {
+            CUI.loadingOverlay.show(this.container.parentNode);
+            this.render();
+            CUI.loadingOverlay.hide();
+        }, this.debounceMs);
     }
 
     _extractHeadersFromDOM() {
         const headers = [];
-        const ths = this.element.querySelectorAll('thead tr:last-child th');
+        const thead = this.element.querySelector('thead');
+        if (!thead) return headers;
+
+        const rows = thead.querySelectorAll('tr');
+        if (rows.length === 0) return headers;
+
+        const lastRow = rows[rows.length - 1];
+        const ths = lastRow.querySelectorAll('th:not(.CUI-hint-header-left):not(.CUI-hint-header-right)');
+
         ths.forEach((th, idx) => {
-            const field = th.getAttribute('data-field') || th.textContent.trim() || `col_${idx}`;
+            const field = th.getAttribute('data-CUI-field') || th.textContent.trim() || `col_${idx}`;
             const label = th.textContent.trim() || field;
-            const type = th.getAttribute('data-type') || 'text';
-            const summary = th.getAttribute('data-summary') || '';
-            headers.push({ field, label, type, summary, element: th });
+            const type = th.getAttribute('data-CUI-type') || 'text';
+            const summary = th.getAttribute('data-CUI-summary') || '';
+
+            const headerInfo = { field, label, type, summary, element: th };
+
+            if (rows.length > 1) {
+                const parentLabels = [];
+                let currentCol = idx;
+                for (let r = rows.length - 2; r >= 0; r--) {
+                    const rowThs = rows[r].querySelectorAll('th:not(.CUI-hint-header-left):not(.CUI-hint-header-right)');
+                    let accumulatedSpan = 0;
+                    for (const rowTh of rowThs) {
+                        const colspan = parseInt(rowTh.getAttribute('colspan')) || 1;
+                        if (accumulatedSpan <= currentCol && accumulatedSpan + colspan > currentCol) {
+                            parentLabels.push(rowTh.textContent.trim());
+                            break;
+                        }
+                        accumulatedSpan += colspan;
+                    }
+                }
+                headerInfo.parentLabels = parentLabels.reverse();
+            }
+
+            headers.push(headerInfo);
         });
         return headers;
     }
@@ -632,27 +896,67 @@ class TableRenderLayer {
         } else {
             this._partialUpdate(headers, entry);
         }
+
+        // 根据后台排序规则同步渲染表头排序指示器（前后台彻底分离）
+        this.element.querySelectorAll('thead th').forEach(th =>
+            th.classList.remove('CUI-sort-asc', 'CUI-sort-desc')
+        );
+        (entry.sortRules || []).forEach(rule => {
+            const th = this.element.querySelector(`thead th[data-CUI-field="${rule.field}"]`);
+            if (th) th.classList.add(rule.order === 'asc' ? 'CUI-sort-asc' : 'CUI-sort-desc');
+        });
     }
 
     _fullRebuild(headers, entry) {
         this._renderBody(headers, entry);
         this._renderFooter(headers, entry);
         this._applyFreezeLayout(headers);
-        this._updatePagination(entry);
+        // 仅在对应方向启用高级冻结时填充提示列
+        this._populateLeftHintColumn(headers);
+        this._populateRightHintColumn(headers);
 
         if (entry.config.type === 'functional') {
             this._injectToolbar();
+            this._updatePagination(entry);
         }
 
         this._syncColumnWidths();
+        this._initHintObserver();
     }
 
     _partialUpdate(headers, entry) {
         this._renderBody(headers, entry);
         this._renderFooter(headers, entry);
         this._applyFreezeLayout(headers);
-        this._updatePagination(entry);
+        // 仅在对应方向启用高级冻结时填充提示列
+        this._populateLeftHintColumn(headers);
+        this._populateRightHintColumn(headers);
+
+        if (entry.config.type === 'functional') {
+            this._updatePagination(entry);
+        }
+
         this._syncColumnWidths();
+        this._setHintColumnWidths();
+        this._initHintObserver();
+    }
+
+    _getColumnWidths() {
+        const lastRow = this.element.querySelector('thead tr:last-child');
+        if (!lastRow) return [];
+        const ths = lastRow.querySelectorAll('th');
+        if (!ths.length) return [];
+
+        const widths = [];
+        let colIndex = 0;
+        ths.forEach(th => {
+            const colspan = parseInt(th.getAttribute('colspan')) || 1;
+            const computedWidth = window.getComputedStyle(th).width;
+            for (let i = 0; i < colspan; i++) {
+                widths[colIndex++] = computedWidth;
+            }
+        });
+        return widths;
     }
 
     /**
@@ -661,25 +965,50 @@ class TableRenderLayer {
      * flex 布局破坏了原生 table 的列宽共享，需此方法显式同步。
      */
     _syncColumnWidths() {
-        const ths = this.element.querySelectorAll('thead tr:last-child th');
-        if (!ths.length) return;
+        const widths = this._getColumnWidths();
+        if (!widths.length) return;
 
-        const widths = Array.from(ths).map(th => window.getComputedStyle(th).width);
+        const getMergedWidth = (startCol, colspan) => {
+            let totalWidth = 0;
+            for (let i = 0; i < colspan; i++) {
+                const w = widths[startCol + i];
+                if (w) {
+                    const num = parseFloat(w);
+                    if (!isNaN(num)) {
+                        totalWidth += num;
+                    }
+                }
+            }
+            return totalWidth > 0 ? `${totalWidth}px` : widths[startCol];
+        };
 
         this.element.querySelectorAll('tbody tr').forEach(tr => {
-            /* 空数据行只有单个占满整行的 td，跳过 --cw 注入避免覆盖 flex:1 撑满效果 */
             if (tr.querySelector('.CUI-table-empty')) return;
-            tr.querySelectorAll('td').forEach((td, i) => {
-                if (widths[i]) td.style.setProperty('--cw', widths[i]);
+            const tds = tr.querySelectorAll('td');
+            let currentCol = 0;
+            tds.forEach(td => {
+                const colspan = parseInt(td.getAttribute('colspan')) || 1;
+                const mergedWidth = getMergedWidth(currentCol, colspan);
+                if (mergedWidth) {
+                    td.style.width = mergedWidth;
+                }
+                currentCol += colspan;
             });
         });
 
-        const tfootRow = this.element.querySelector('tfoot tr');
-        if (tfootRow) {
-            tfootRow.querySelectorAll('td, th').forEach((cell, i) => {
-                if (widths[i]) cell.style.setProperty('--cw', widths[i]);
+        const tfootRows = this.element.querySelectorAll('tfoot tr');
+        tfootRows.forEach(tfootRow => {
+            const cells = tfootRow.querySelectorAll('td, th');
+            let currentCol = 0;
+            cells.forEach(cell => {
+                const colspan = parseInt(cell.getAttribute('colspan')) || 1;
+                const mergedWidth = getMergedWidth(currentCol, colspan);
+                if (mergedWidth) {
+                    cell.style.width = mergedWidth;
+                }
+                currentCol += colspan;
             });
-        }
+        });
     }
 
     _renderBody(headers, entry) {
@@ -694,22 +1023,71 @@ class TableRenderLayer {
         }
 
         tbody.innerHTML = '';
-        data.forEach(row => {
-            const tr = document.createElement('tr');
-            tr.setAttribute('data-row-id', row._id);
-            tr.setAttribute('data-row-original-index', row._originalIndex);
 
-            headers.forEach(h => {
+        const isDisplay = entry.config.type === 'display';
+        const mergeCells = isDisplay ? (this.freezeConfig.mergeCells || []) : [];
+
+        const colWidths = this._getColumnWidths();
+
+        const rowspans = new Map();
+
+        const leftFields = (this.freezeConfig.frozenLeft && this.freezeConfig.frozenLeft.mode === 'advanced') ? this.freezeConfig.frozenLeft.fields : [];
+        const rightFields = (this.freezeConfig.frozenRight && this.freezeConfig.frozenRight.mode === 'advanced') ? this.freezeConfig.frozenRight.fields : [];
+
+        // 构建字段类型映射，用于提示列中识别掩码字段
+        const fieldTypeMap = {};
+        headers.forEach(h => { fieldTypeMap[h.field] = h.type; });
+
+        const leftHintTexts = [];
+        const rightHintTexts = [];
+        
+        data.forEach((row, rowIndex) => {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-CUI-row-id', row._id);
+            tr.setAttribute('data-CUI-row-original-index', row._originalIndex);
+
+            // 添加左侧提示列（仅在高级模式启用时，放在最前面）
+            if (leftFields.length > 0) {
+                const leftText = leftFields.map(field => {
+                    const val = row[field] || '';
+                    const type = fieldTypeMap[field];
+                    if (this._isMaskedType(type)) {
+                        const masked = this._getCellMask(type, val);
+                        return masked !== null ? masked : val;
+                    }
+                    return val;
+                }).join(' · ');
+                leftHintTexts.push(leftText);
+                const leftTd = document.createElement('td');
+                leftTd.className = 'CUI-hint-cell-left';
+                leftTd.textContent = leftText;
+                tr.appendChild(leftTd);
+            }
+
+            let colIndex = 0;
+            
+            while (colIndex < headers.length) {
+                const rsKey = `${rowIndex}-${colIndex}`;
+                if (rowspans.has(rsKey)) {
+                    rowspans.set(rsKey, rowspans.get(rsKey) - 1);
+                    if (rowspans.get(rsKey) <= 0) {
+                        rowspans.delete(rsKey);
+                    }
+                    colIndex++;
+                    continue;
+                }
+
+                const h = headers[colIndex];
                 const td = document.createElement('td');
                 const value = row[h.field] ?? '';
 
-                td.setAttribute('data-field', h.field);
-                td.setAttribute('data-row-index', row._originalIndex);
-                td.setAttribute('data-value', String(value));
-                if (h.type) td.setAttribute('data-type', h.type);
+                td.setAttribute('data-CUI-field', h.field);
+                td.setAttribute('data-CUI-row-index', row._originalIndex);
+                td.setAttribute('data-CUI-value', String(value));
+                if (h.type) td.setAttribute('data-CUI-type', h.type);
 
                 const cellClasses = [];
-                const isEditable = h.element?.getAttribute('data-editable') === 'true' ||
+                const isEditable = h.element?.getAttribute('data-CUI-editable') === 'true' ||
                                    (entry.config.type === 'functional' && h.field !== 'id' && h.field !== 'ID');
                 if (isEditable) {
                     td.setAttribute('contenteditable', 'true');
@@ -720,7 +1098,7 @@ class TableRenderLayer {
                     const maskText = this._getCellMask(h.type, value);
                     if (maskText !== null) {
                         cellClasses.push('CUI-table-cell-masked');
-                        td.setAttribute('data-masked', maskText);
+                        td.setAttribute('data-CUI-masked', maskText);
                     }
                 }
 
@@ -731,104 +1109,394 @@ class TableRenderLayer {
                     cellClasses.push('CUI-td-long');
                 }
 
+                if (isDisplay) {
+                    const mergeRule = mergeCells.find(m => m.row === rowIndex && m.col === colIndex);
+                    if (mergeRule) {
+                        const { colspan = 1, rowspan = 1 } = mergeRule;
+                        if (colspan > 1) {
+                            td.setAttribute('colspan', colspan);
+                            cellClasses.push('CUI-cell-merged-col');
+                        }
+                        if (rowspan > 1) {
+                            td.setAttribute('rowspan', rowspan);
+                            cellClasses.push('CUI-cell-merged-row');
+                            for (let j = 1; j < rowspan; j++) {
+                                for (let k = 0; k < colspan; k++) {
+                                    rowspans.set(`${rowIndex + j}-${colIndex + k}`, rowspan - j);
+                                }
+                            }
+                        }
+                        td.className = cellClasses.join(' ');
+                        td.innerHTML = this._formatCellValue(value, h.type, h);
+                        colIndex += colspan;
+                        tr.appendChild(td);
+                        continue;
+                    }
+                }
+
                 td.className = cellClasses.join(' ');
                 td.innerHTML = this._formatCellValue(value, h.type, h);
                 tr.appendChild(td);
-            });
+                
+                colIndex++;
+            }
+
+            // 添加右侧提示列（仅在高级模式启用时，放在最后面）
+            if (rightFields.length > 0) {
+                const rightText = rightFields.map(field => {
+                    const val = row[field] || '';
+                    const type = fieldTypeMap[field];
+                    if (this._isMaskedType(type)) {
+                        const masked = this._getCellMask(type, val);
+                        return masked !== null ? masked : val;
+                    }
+                    return val;
+                }).join(' · ');
+                rightHintTexts.push(rightText);
+                const rightTd = document.createElement('td');
+                rightTd.className = 'CUI-hint-cell-right';
+                rightTd.textContent = rightText;
+                tr.appendChild(rightTd);
+            }
 
             tbody.appendChild(tr);
         });
+        
+        this._setHintColumnWidths();
+    }
+
+    /**
+     * 判断某列是否启用汇总
+     * 规则：
+     * - data-CUI-summary="enable" → 强制启用
+     * - data-CUI-summary="none" → 强制排除
+     * - data-CUI-type 为 number/currency → 默认启用
+     * - 其他类型 → 默认排除
+     */
+    _isSummaryEnabled(header) {
+        const summaryAttr = header.element?.getAttribute('data-CUI-summary') || header.summary || '';
+        
+        // 强制启用
+        if (summaryAttr === 'enable') return true;
+        // 强制排除
+        if (summaryAttr === 'none') return false;
+        // 如果有具体的汇总规则（如 sum/count/max/min/avg），视为启用
+        if (['sum', 'count', 'max', 'min', 'avg'].includes(summaryAttr)) return true;
+        
+        // 根据类型自动判断
+        const type = header.type || 'text';
+        return type === 'number' || type === 'currency';
+    }
+
+    /**
+     * 获取某列支持的汇总方式列表
+     */
+    _getSummaryOptions(type) {
+        const numericOptions = [
+            { value: 'sum', label: '求和', abbr: 'SUM' },
+            { value: 'avg', label: '平均值', abbr: 'AVG' },
+            { value: 'max', label: '最大值', abbr: 'MAX' },
+            { value: 'min', label: '最小值', abbr: 'MIN' },
+            { value: 'count', label: '计数', abbr: 'CNT' }
+        ];
+        const otherOptions = [
+            { value: 'count', label: '计数', abbr: 'CNT' },
+            { value: 'max', label: '最大值', abbr: 'MAX' },
+            { value: 'min', label: '最小值', abbr: 'MIN' }
+        ];
+        
+        return (type === 'number' || type === 'currency') ? numericOptions : otherOptions;
+    }
+
+    /**
+     * 获取某列默认的汇总方式
+     */
+    _getDefaultSummaryMethod(header) {
+        const summaryAttr = header.element?.getAttribute('data-CUI-summary') || header.summary || '';
+        // 如果用户指定了汇总方式，使用用户指定的
+        if (['sum', 'count', 'max', 'min', 'avg'].includes(summaryAttr)) {
+            return summaryAttr;
+        }
+        // 默认求和
+        return 'sum';
+    }
+
+    /**
+     * 计算汇总值
+     */
+    _calculateSummary(values, type, method) {
+        if (!values.length) return '';
+        
+        const numericMethods = ['sum', 'count', 'max', 'min', 'avg'];
+        
+        if (type === 'number' || type === 'currency') {
+            const numValues = values
+                .map(v => parseFloat(v))
+                .filter(v => !isNaN(v));
+            
+            if (!numValues.length) return '';
+            
+            switch (method) {
+                case 'sum': return numValues.reduce((sum, v) => sum + v, 0);
+                case 'count': return numValues.length;
+                case 'max': return Math.max(...numValues);
+                case 'min': return Math.min(...numValues);
+                case 'avg': return numValues.reduce((sum, v) => sum + v, 0) / numValues.length;
+                default: return '';
+            }
+        } else if (type === 'date' || type === 'datetime') {
+            const dateValues = values
+                .map(v => Date.parse(v))
+                .filter(v => !isNaN(v));
+            
+            if (!dateValues.length) return '';
+            
+            switch (method) {
+                case 'max': return new Date(Math.max(...dateValues)).toISOString().slice(0, 10);
+                case 'min': return new Date(Math.min(...dateValues)).toISOString().slice(0, 10);
+                case 'count': return dateValues.length;
+                default: return '';
+            }
+        } else {
+            // 其他类型只支持计数
+            if (method === 'count') {
+                return values.filter(v => v !== undefined && v !== null && String(v).trim() !== '').length;
+            }
+            return '';
+        }
+    }
+
+    /**
+     * 更新单个单元格的汇总值
+     */
+    _updateSummaryCell(cell, header, data) {
+        if (!cell || !header) return;
+        
+        const method = this.summaryMethods[header.field] || this._getDefaultSummaryMethod(header);
+        const type = header.type || 'text';
+        const values = data.map(row => row[header.field]).filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+        const calculatedVal = this._calculateSummary(values, type, method);
+        
+        if (calculatedVal !== '' && calculatedVal !== undefined) {
+            // 为 avg 汇总方法增加小数位精度
+            const summaryHeader = { ...header };
+            if (method === 'avg' && (type === 'number' || type === 'currency')) {
+                summaryHeader.decimals = 2;
+            }
+            
+            if (type === 'currency') {
+                cell.innerHTML = this._formatCellValue(calculatedVal, 'currency', summaryHeader);
+            } else if (type === 'number') {
+                cell.innerHTML = this._formatCellValue(calculatedVal, 'number', summaryHeader);
+            } else {
+                cell.textContent = String(calculatedVal);
+            }
+        } else {
+            // 空值显示占位
+            cell.innerHTML = `<span class="CUI-summary-empty">—</span>`;
+        }
+    }
+
+    /**
+     * 创建汇总下拉选择器（旋转 select 样式）
+     */
+    _createSummarySelect(field, type, currentMethod) {
+        const options = this._getSummaryOptions(type);
+        const select = document.createElement('select');
+        select.className = 'CUI-summary-select';
+        select.setAttribute('data-CUI-field', field);
+
+        options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.abbr;
+            if (opt.value === currentMethod) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+
+        return select;
+    }
+
+    /**
+     * 修正旋转 select 的偏移
+     * 旋转 -90° 后，元素宽度变成了高度方向的偏移量
+     * 先 translateY 再 rotate，这样平移是在旋转前的坐标系中进行
+     */
+    _fixSelectTransform(select) {
+        if (!select || !select.offsetWidth) return;
+        const offset = select.offsetWidth * 0.75; // scale(0.75) 补偿
+        select.style.transform = `translateY(${offset}px) rotate(-90deg) scale(0.75)`;
+    }
+
+    /**
+     * 绑定汇总切换事件
+     */
+    _bindSummaryEvents() {
+        const tfoot = this.element.querySelector('tfoot');
+        if (!tfoot) return;
+
+        if (!this._summaryBound) {
+            tfoot.addEventListener('change', (e) => {
+                if (e.target.classList.contains('CUI-summary-select')) {
+                    const field = e.target.getAttribute('data-CUI-field');
+                    const method = e.target.value;
+                    this.summaryMethods[field] = method;
+
+                    // 重新计算该列的汇总值（基于当前页数据）
+                    const headers = this._extractHeadersFromDOM();
+                    const header = headers.find(h => h.field === field);
+                    if (!header) return;
+
+                    const cell = tfoot.querySelector(`td[data-CUI-summary-field="${field}"]`);
+                    if (cell) {
+                        const valueSpan = cell.querySelector('.CUI-summary-value');
+                        if (valueSpan) {
+                            const { data } = this.dataLayer.paginate(this.tableId);
+                            this._updateSummaryCell(valueSpan, header, data);
+                        }
+                    }
+                }
+            });
+            this._summaryBound = true;
+        }
     }
 
     _renderFooter(headers, entry) {
         const tfoot = this.element.querySelector('tfoot');
         if (!tfoot) return;
 
-        const footerRow = tfoot.querySelector('tr');
-        if (!footerRow) return;
+        const leftFields = (this.freezeConfig.frozenLeft && this.freezeConfig.frozenLeft.mode === 'advanced') ? this.freezeConfig.frozenLeft.fields : [];
+        const rightFields = (this.freezeConfig.frozenRight && this.freezeConfig.frozenRight.mode === 'advanced') ? this.freezeConfig.frozenRight.fields : [];
 
-        const cells = footerRow.querySelectorAll('td, th');
-        const data = entry.filteredData || [];
+        // 汇总统计基于当前页数据（与表体一致）
+        const { data } = this.dataLayer.paginate(this.tableId);
+        const totalCols = headers.length + (leftFields.length > 0 ? 1 : 0) + (rightFields.length > 0 ? 1 : 0);
 
-        headers.forEach((h, index) => {
-            const cell = cells[index];
-            if (!cell) return;
+        tfoot.innerHTML = '';
+        const footerRow = document.createElement('tr');
+        tfoot.appendChild(footerRow);
 
+        for (let i = 0; i < totalCols; i++) {
+            const td = document.createElement('td');
+            footerRow.appendChild(td);
+        }
+
+        let cellIndex = 0;
+
+        if (leftFields.length > 0) {
+            const firstCell = footerRow.querySelectorAll('td, th')[cellIndex];
+            firstCell.className = 'CUI-hint-header-left';
+            const renderText = (fields) => fields.map(f => {
+                const header = headers.find(h => h.field === f);
+                return header ? header.label : f;
+            }).join(' · ');
+            firstCell.textContent = renderText(leftFields);
+            cellIndex++;
+        }
+
+        headers.forEach((h) => {
+            const cell = footerRow.querySelectorAll('td, th')[cellIndex];
+            if (!cell) {
+                cellIndex++;
+                return;
+            }
+
+            // 用户自定义内容优先级最高
             if (this.originalTfootContent[h.field] !== undefined) {
                 cell.textContent = this.originalTfootContent[h.field];
+                cellIndex++;
                 return;
             }
 
-            const summaryRule = h.summary || h.element?.getAttribute('data-summary') || '';
-            if (!summaryRule) {
-                cell.textContent = '';
-                return;
-            }
-
-            const values = data.map(row => row[h.field]).filter(v => v !== undefined && v !== null && String(v).trim() !== '');
-            const colType = h.type || 'text';
-            let calculatedVal = '';
-
-            if (colType === 'number' || colType === 'currency') {
-                const numValues = values.map(v => parseFloat(v)).filter(v => !isNaN(v));
-                switch (summaryRule) {
-                    case 'sum': calculatedVal = numValues.reduce((sum, v) => sum + v, 0); break;
-                    case 'count': calculatedVal = numValues.length; break;
-                    case 'max': calculatedVal = numValues.length > 0 ? Math.max(...numValues) : ''; break;
-                    case 'min': calculatedVal = numValues.length > 0 ? Math.min(...numValues) : ''; break;
-                    case 'avg': calculatedVal = numValues.length > 0 ? (numValues.reduce((sum, v) => sum + v, 0) / numValues.length) : 0; break;
+            // 判断是否启用汇总
+            if (this._isSummaryEnabled(h)) {
+                const field = h.field;
+                const type = h.type || 'text';
+                
+                // 确保 summaryMethods 中有该列的默认值
+                if (!this.summaryMethods[field]) {
+                    this.summaryMethods[field] = this._getDefaultSummaryMethod(h);
                 }
-            } else if (colType === 'date' || colType === 'datetime') {
-                const dateValues = values.map(v => Date.parse(v)).filter(v => !isNaN(v));
-                switch (summaryRule) {
-                    case 'max': calculatedVal = dateValues.length > 0 ? new Date(Math.max(...dateValues)).toISOString().slice(0, 10) : ''; break;
-                    case 'min': calculatedVal = dateValues.length > 0 ? new Date(Math.min(...dateValues)).toISOString().slice(0, 10) : ''; break;
-                    default: calculatedVal = '';
-                }
-            } else {
-                calculatedVal = summaryRule === 'count' ? values.length : '';
-            }
+                
+                const currentMethod = this.summaryMethods[field];
+                
+                // 创建汇总容器
+                const summaryWrapper = document.createElement('div');
+                summaryWrapper.className = 'CUI-summary-wrapper';
 
-            if (calculatedVal !== '') {
-                if (colType === 'currency') {
-                    cell.innerHTML = this._formatCellValue(calculatedVal, 'currency', h);
-                } else if (colType === 'number') {
-                    cell.innerHTML = this._formatCellValue(calculatedVal, 'number', h);
-                } else {
-                    cell.textContent = String(calculatedVal);
-                }
+                // 创建下拉选择器
+                const select = this._createSummarySelect(field, type, currentMethod);
+                summaryWrapper.appendChild(select);
+                
+                // 创建值显示容器
+                const valueSpan = document.createElement('span');
+                valueSpan.className = 'CUI-summary-value';
+                summaryWrapper.appendChild(valueSpan);
+                
+                cell.appendChild(summaryWrapper);
+                cell.setAttribute('data-CUI-summary-field', field);
+                cell.setAttribute('data-CUI-type', type);
+                cell.classList.add('CUI-summary-cell');
+                
+                // 修正旋转 select 的偏移
+                this._fixSelectTransform(select);
+                
+                // 计算并显示汇总值
+                this._updateSummaryCell(valueSpan, h, data);
             } else {
                 cell.textContent = '';
             }
+
+            cellIndex++;
         });
+
+        if (rightFields.length > 0) {
+            const lastCell = footerRow.querySelectorAll('td, th')[cellIndex];
+            lastCell.className = 'CUI-hint-header-right';
+            const renderText = (fields) => fields.map(f => {
+                const header = headers.find(h => h.field === f);
+                return header ? header.label : f;
+            }).join(' · ');
+            lastCell.textContent = renderText(rightFields);
+        }
+
+        // 绑定汇总切换事件
+        this._bindSummaryEvents();
     }
 
     _applyFreezeLayout(headers) {
-        const table = this.element;
-        const thead = table.querySelector('thead');
-        const tfoot = table.querySelector('tfoot');
+        const { header, footer, firstCol, lastCol, frozenLeft, frozenRight } = this.freezeConfig;
 
-        thead?.classList.toggle('CUI-freeze-thead', this.freezeConfig.header);
-        tfoot?.classList.toggle('CUI-freeze-tfoot', this.freezeConfig.footer);
+        const shouldFreezeHeader = header || 
+            (frozenLeft.mode === 'advanced' && frozenLeft.fields.length > 0) || 
+            (frozenRight.mode === 'advanced' && frozenRight.fields.length > 0);
+        const shouldFreezeFooter = footer;
+        const shouldFreezeFirstCol = firstCol || 
+            (frozenLeft.mode === 'advanced' && frozenLeft.fields.length > 0);
+        const shouldFreezeLastCol = lastCol || 
+            (frozenRight.mode === 'advanced' && frozenRight.fields.length > 0);
 
-        const totalCols = headers.length;
-        if (totalCols === 0) return;
+        this.element.classList.toggle('CUI-freeze-header', shouldFreezeHeader);
+        this.element.classList.toggle('CUI-freeze-footer', shouldFreezeFooter);
+        this.element.classList.toggle('CUI-freeze-first-col', shouldFreezeFirstCol);
+        this.element.classList.toggle('CUI-freeze-last-col', shouldFreezeLastCol);
 
-        const trs = table.querySelectorAll('tr');
-        trs.forEach(tr => {
-            const cells = tr.querySelectorAll('th, td');
-            if (cells.length === 0) return;
-            /* 空数据行只有单个占满整行的 td，跳过冻结避免 sticky/阴影副作用 */
-            if (tr.querySelector('.CUI-table-empty')) return;
-
-            if (this.freezeConfig.firstCol) {
-                cells[0]?.classList.add('CUI-freeze-first');
-            }
-            if (this.freezeConfig.lastCol) {
-                cells[cells.length - 1]?.classList.add('CUI-freeze-last');
-            }
-        });
+        // 当启用表尾冻结时，给容器添加类并给表格添加底部 margin 以防止子像素间隙
+        if (shouldFreezeFooter) {
+            this.container.classList.add('CUI-container-freeze-footer');
+            this.element.style.marginBottom = '3px';
+        } else {
+            this.container.classList.remove('CUI-container-freeze-footer');
+            this.element.style.marginBottom = '';
+        }
     }
+
+    
+
+    _initHintObserver() {}
+    _destroyHintObserver() {}
 
     _updatePagination(entry) {
         const wrapper = this.container.parentNode;
@@ -850,14 +1518,14 @@ class TableRenderLayer {
         };
 
         const sortBadges = (entry.sortRules || []).map(r => `
-            <span class="CUI-badge CUI-badge-outline CUI-badge-secondary CUI-badge-closeable" data-sort-field="${escapeHtml(r.field)}">
+            <span class="CUI-badge CUI-badge-outline CUI-badge-secondary CUI-badge-closeable" data-CUI-sort-field="${escapeHtml(r.field)}">
                 ${escapeHtml(fieldLabel(r.field))} ${r.order === 'asc' ? '↑' : '↓'}
                 <button class="CUI-badge-close" type="button">×</button>
             </span>
         `).join('');
 
         const filterBadges = (entry.filterRules || []).map((r, i) => `
-            <span class="CUI-badge CUI-badge-outline CUI-badge-secondary CUI-badge-closeable" data-filter-index="${i}">
+            <span class="CUI-badge CUI-badge-outline CUI-badge-secondary CUI-badge-closeable" data-CUI-filter-index="${i}">
                 ${escapeHtml(fieldLabel(r.field))} ${escapeHtml(this._filterOpLabel(r.operator))} ${escapeHtml(r.value)}
                 <button class="CUI-badge-close" type="button">×</button>
             </span>
@@ -932,8 +1600,8 @@ class TableRenderLayer {
             if (!closeBtn) return;
             const badge = closeBtn.closest('.CUI-badge-closeable');
             if (!badge) return;
-            const sortField = badge.getAttribute('data-sort-field');
-            const filterIdx = badge.getAttribute('data-filter-index');
+            const sortField = badge.getAttribute('data-CUI-sort-field');
+            const filterIdx = badge.getAttribute('data-CUI-filter-index');
             if (sortField !== null) {
                 this.dataLayer.unsort(this.tableId, sortField);
             } else if (filterIdx !== null) {
@@ -1126,7 +1794,7 @@ class TableRenderLayer {
             return `
                 <div class="CUI-table-filter-rule">
                     <span class="CUI-filter-rule-text">${escapeHtml(label)} ${escapeHtml(this._filterOpLabel(r.operator))} ${escapeHtml(r.value)}</span>
-                    <button class="CUI-filter-rule-remove" type="button" data-index="${i}">×</button>
+                    <button class="CUI-filter-rule-remove" type="button" data-CUI-index="${i}">×</button>
                 </div>
             `;
         }).join('');
@@ -1204,6 +1872,7 @@ class TableInit {
         this.registry = registry;
         this.dataLayer = dataLayer;
         this.renderLayers = new Map();
+        this._tableCounter = 0;
     }
 
     init() {
@@ -1220,14 +1889,16 @@ class TableInit {
     }
 
     _shouldSkip(element) {
-        if (element.getAttribute('data-table-init') === 'finish') return true;
+        // 数据表格开关：只有 data-CUI-dataTable="true" 的表格才进行 JS 初始化
+        if (element.getAttribute('data-CUI-dataTable') !== 'true') return true;
+        if (element.getAttribute('data-CUI-table-init') === 'finish') return true;
         const entry = this.registry.get(element.id);
         if (entry && (entry.initStatus === 'error' || entry.initStatus === 'loading')) return true;
         return false;
     }
 
     async initTable(element) {
-        const tableId = element.id || `cui-table-${Date.now()}`;
+        const tableId = element.id || `cui-table-${Date.now()}-${this._tableCounter++}`;
         if (!element.id) element.id = tableId;
 
         this.registry.register(tableId, this._extractConfig(element));
@@ -1257,18 +1928,19 @@ class TableInit {
     }
 
     _extractConfig(element) {
-        const dataAttr = element.getAttribute('data-cui-table');
+        const dataAttr = element.getAttribute('data-CUI-config');
         let parsedConfig = {};
         if (dataAttr) {
             try { parsedConfig = JSON.parse(dataAttr); } catch (e) {}
         }
 
         return {
-            dataSource: parsedConfig.dataSource || element.getAttribute('data-data-source') || '',
-            striped: parsedConfig.striped !== false && element.getAttribute('data-striped') !== 'false',
+            dataSource: parsedConfig.dataSource || '',
+            striped: parsedConfig.striped !== false,
             pageSize: parsedConfig.pageSize || 10,
             type: parsedConfig.type || 'display',
-            longDebounce: parsedConfig.longDebounce === true
+            longDebounce: parsedConfig.longDebounce === true,
+            freeze: parsedConfig.freeze || {}
         };
     }
 
@@ -1276,24 +1948,24 @@ class TableInit {
         const headers = [];
         const ths = element.querySelectorAll('thead tr:last-child th');
         ths.forEach((th, idx) => {
-            const field = th.getAttribute('data-field') || th.textContent.trim() || `col_${idx}`;
+            const field = th.getAttribute('data-CUI-field') || th.textContent.trim() || `col_${idx}`;
             const label = th.textContent.trim() || field;
-            const type = th.getAttribute('data-type') || 'text';
-            const summary = th.getAttribute('data-summary') || '';
+            const type = th.getAttribute('data-CUI-type') || 'text';
+            const summary = th.getAttribute('data-CUI-summary') || '';
             headers.push({ field, label, type, summary });
         });
         return headers;
     }
 
     _getDataSource(element) {
-        const dataAttr = element.getAttribute('data-cui-table');
+        const dataAttr = element.getAttribute('data-CUI-config');
         if (dataAttr) {
             try {
                 const parsed = JSON.parse(dataAttr);
                 return parsed.dataSource || '';
             } catch (e) {}
         }
-        return element.getAttribute('data-data-source') || '';
+        return '';
     }
 
     async _loadRemoteData(url) {
@@ -1371,7 +2043,7 @@ class TableInit {
 
         const ths = element.querySelectorAll('thead tr:last-child th');
         const headers = Array.from(ths).map((th, idx) => 
-            th.getAttribute('data-field') || th.textContent.trim() || `col_${idx}`
+            th.getAttribute('data-CUI-field') || th.textContent.trim() || `col_${idx}`
         );
 
         tbody.querySelectorAll('tr').forEach(tr => {
@@ -1387,12 +2059,21 @@ class TableInit {
 
     _initializeSuccess(tableId, element) {
         this.registry.setStatus(tableId, 'success');
-        element.setAttribute('data-table-init', 'finish');
+        element.setAttribute('data-CUI-table-init', 'finish');
+
+        const entry = this.registry.get(tableId);
+        element.setAttribute('data-CUI-table-type', entry.config.type);
+
+        if (entry.config.striped) {
+            element.classList.add('CUI-table-striped');
+        }
 
         const renderLayer = new TableRenderLayer(this.registry, this.dataLayer, element);
         this.renderLayers.set(tableId, renderLayer);
 
+        CUI.loadingOverlay.show(element.parentNode.parentNode);
         renderLayer.render();
+        CUI.loadingOverlay.hide();
 
         this._bindEditEvents(tableId, element);
         this._bindSortEvents(tableId, element);
@@ -1410,8 +2091,8 @@ class TableInit {
         tbody.addEventListener('focusout', (e) => {
             const td = e.target.closest('td');
             if (td && td.hasAttribute('contenteditable')) {
-                const field = td.getAttribute('data-field');
-                const rowIndex = parseInt(td.getAttribute('data-row-index'));
+                const field = td.getAttribute('data-CUI-field');
+                const rowIndex = parseInt(td.getAttribute('data-CUI-row-index'));
                 const newValue = td.textContent.trim();
 
                 if (field && !isNaN(rowIndex)) {
@@ -1432,27 +2113,18 @@ class TableInit {
             const entry = this.registry.get(tableId);
             if (!entry || entry.config.type !== 'functional') return;
 
-            const field = th.getAttribute('data-field') || th.textContent.trim();
+            const field = th.getAttribute('data-CUI-field') || th.textContent.trim();
             const currentRules = entry.sortRules.filter(r => r.field === field);
 
-            /* 三态循环：无排序 → 升序 → 降序 → 取消排序（无）→ 升序... */
-            element.querySelectorAll('thead th').forEach(t => t.classList.remove('CUI-sort-asc', 'CUI-sort-desc'));
-
+            /* 三态循环：无排序 → 升序 → 降序 → 取消排序（无）→ 升序...
+             * 只修改后台状态，不操作 DOM。render() 会读取状态同步 UI。 */
             if (currentRules.length === 0) {
-                /* 无 → 升序 */
                 this.dataLayer.sort(tableId, { field, order: 'asc' });
-                th.classList.add('CUI-sort-asc');
             } else if (currentRules[0].order === 'asc') {
-                /* 升序 → 降序 */
                 this.dataLayer.sort(tableId, { field, order: 'desc' });
-                th.classList.add('CUI-sort-desc');
             } else {
-                /* 降序 → 取消排序 */
                 this.dataLayer.unsort(tableId, field);
-                /* 清除 class 后不加新 class，恢复默认 ↕ 图标 */
             }
-            /* 排序变更通过 registry 'filtered' 事件触发 _scheduleUpdate → render，
-             * 无需手动调用 render（TableInit 无 render 方法）。 */
         });
     }
 
@@ -1550,6 +2222,39 @@ class Table {
         return true;
     }
 
+    setHintColumnWidth(tableId, direction, width) {
+        const renderLayer = this.initModule.renderLayers.get(tableId);
+        if (!renderLayer) return false;
+        return renderLayer.setHintColumnWidth(direction, width);
+    }
+
+    setColumnWidth(tableId, columnIndex, width) {
+        const table = document.getElementById(tableId);
+        if (!table) return false;
+        
+        const parsedWidth = parseInt(width, 10);
+        if (isNaN(parsedWidth)) return false;
+        
+        const widthValue = `${parsedWidth}px`;
+        
+        const headerCells = table.querySelectorAll(`thead tr th:nth-child(${columnIndex + 1})`);
+        headerCells.forEach(cell => {
+            cell.style.width = widthValue;
+        });
+        
+        const bodyCells = table.querySelectorAll(`tbody tr td:nth-child(${columnIndex + 1})`);
+        bodyCells.forEach(cell => {
+            cell.style.width = widthValue;
+        });
+        
+        const footerCells = table.querySelectorAll(`tfoot tr td:nth-child(${columnIndex + 1}), tfoot tr th:nth-child(${columnIndex + 1})`);
+        footerCells.forEach(cell => {
+            cell.style.width = widthValue;
+        });
+        
+        return true;
+    }
+
     _extractHeadersFromDOM(tableId) {
         const element = document.getElementById(tableId);
         if (!element) return [];
@@ -1557,10 +2262,10 @@ class Table {
         const headers = [];
         const ths = element.querySelectorAll('thead tr:last-child th');
         ths.forEach((th, idx) => {
-            const field = th.getAttribute('data-field') || th.textContent.trim() || `col_${idx}`;
+            const field = th.getAttribute('data-CUI-field') || th.textContent.trim() || `col_${idx}`;
             const label = th.textContent.trim() || field;
-            const type = th.getAttribute('data-type') || 'text';
-            const summary = th.getAttribute('data-summary') || '';
+            const type = th.getAttribute('data-CUI-type') || 'text';
+            const summary = th.getAttribute('data-CUI-summary') || '';
             headers.push({ field, label, type, summary });
         });
         return headers;

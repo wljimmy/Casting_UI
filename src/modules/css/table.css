@@ -1,6 +1,6 @@
 /*
  * Casting UI Framework
- * Version: 0.9.1
+ * Version: 0.11.0
  * Module: table.css
  * Description: 表格组件样式 - 统一边框折叠、背景色挂载与 sticky 多方向冻结层级
  * Copyright (c) 2026 Bingo工作室
@@ -26,6 +26,11 @@
     /* 底栏始终存在，底角改直角与底栏顶角无缝衔接 */
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
+}
+
+/* 容器内的表格不需要额外的底部 margin，否则会导致 tfoot 冻结时无法粘在容器底部 */
+.CUI-table-container .CUI-table {
+    margin-bottom: 0;
 }
 
 /* 功能型表格有工具栏在上方时，容器顶角改直角与工具栏底角无缝衔接 */
@@ -129,51 +134,54 @@
     background: var(--bg-color);
 }
 
-/* thead/tbody/tfoot 作为块级容器，tr 作为 flex 容器 */
-.CUI-table thead,
-.CUI-table tbody,
+/* 恢复原生table布局以支持colspan/rowspan */
+.CUI-table {
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.CUI-table thead {
+    display: table-header-group;
+}
+
+.CUI-table tbody {
+    display: table-row-group;
+}
+
 .CUI-table tfoot {
-    display: block;
-    width: 100%;
+    display: table-footer-group;
 }
 
 .CUI-table tr {
-    display: flex;
-    width: 100%;
+    display: table-row;
 }
 
-/* th 保持 block：表头内容填满行高，省略号三件套直接生效 */
+/* th 恢复原生table-cell布局 */
 .CUI-table th {
-    display: block;
-    flex-shrink: 0;
+    display: table-cell;
     padding: var(--size-sm) var(--size-md);
     background-color: var(--bg-color);
     border-right: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     box-sizing: border-box;
     line-height: 1.5em;
-    max-width: 320px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* td 改为 flex：align-items:center 实现单元格内垂直居中。
- * 省略号三件套下沉到内层 .CUI-cell-text（flex 匿名 item 不渲染省略号）。
- * 列宽由 JS 从 thead th 计算宽度同步到 --cw，不在 td 上重复定义。 */
+/* td 恢复原生table-cell布局 */
 .CUI-table td {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    width: var(--cw, auto);
+    display: table-cell;
     padding: var(--size-sm) var(--size-md);
     background-color: var(--bg-color);
     border-right: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     box-sizing: border-box;
     line-height: 1.5em;
-    max-width: 320px;
     overflow: hidden;
+    white-space: nowrap;
+    vertical-align: middle;
 }
 
 /* 内层文本容器：短文本横向滚动防溢出（如身份证号长位数字）。
@@ -288,16 +296,17 @@
 }
 
 /* 排序箭头及交互 */
-.CUI-table thead th[data-sortable="true"],
+.CUI-table thead th[data-CUI-sortable="true"],
 .CUI-table-toolbar-left+.CUI-table thead th {
     cursor: pointer;
 }
 
-.CUI-table thead th[data-sortable="true"]:hover {
+.CUI-table thead th[data-CUI-sortable="true"]:hover {
     background-color: var(--gray-300) !important;
 }
 
-.CUI-table thead th::after {
+.CUI-table-toolbar + .CUI-table-container .CUI-table thead th::after,
+.CUI-table[data-table-type="functional"] thead th::after {
     content: ' ↕';
     color: var(--text-light);
     opacity: 0.3;
@@ -305,13 +314,15 @@
     margin-left: var(--size-xs);
 }
 
-.CUI-table thead th.CUI-sort-asc::after {
+.CUI-table-toolbar + .CUI-table-container .CUI-table thead th.CUI-sort-asc::after,
+.CUI-table[data-table-type="functional"] thead th.CUI-sort-asc::after {
     content: ' ▲';
     color: var(--primary-color);
     opacity: 1;
 }
 
-.CUI-table thead th.CUI-sort-desc::after {
+.CUI-table-toolbar + .CUI-table-container .CUI-table thead th.CUI-sort-desc::after,
+.CUI-table[data-table-type="functional"] thead th.CUI-sort-desc::after {
     content: ' ▼';
     color: var(--primary-color);
     opacity: 1;
@@ -328,82 +339,217 @@
     color: var(--text-primary);
 }
 
+/* 汇总单元格样式 */
+.CUI-table tfoot td.CUI-summary-cell {
+    padding: var(--size-xs) var(--size-sm);
+    position: relative;
+}
+
+/* 汇总内容包装器 */
+.CUI-summary-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    /* 为旋转的绝对定位 select 留出空间 */
+    padding-left: 20px;
+}
+
+/* 汇总下拉选择器 - 绝对定位到单元格左上角 */
+.CUI-summary-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    font-size: 12px;
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: white;
+    border-radius: 4px;
+    background-color: var(--gray-500);
+    margin: 0;
+    padding: 2px 1px;
+    border: none;
+    transform: rotate(-90deg) scale(0.75);
+    transform-origin: left top;
+    cursor: pointer;
+    outline: none;
+    z-index: 1;
+}
+
+.CUI-summary-select:hover {
+    background-color: var(--gray-600);
+}
+
+/* 汇总值显示 */
+.CUI-summary-value {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* 空值占位 */
+.CUI-summary-empty {
+    color: var(--text-light);
+    font-weight: 400;
+}
+
+/* 数字/货币类型汇总值居右对齐 */
+.CUI-summary-cell.CUI-td-number .CUI-summary-value,
+.CUI-summary-cell[data-CUI-type="number"] .CUI-summary-value,
+.CUI-summary-cell[data-CUI-type="currency"] .CUI-summary-value {
+    text-align: right;
+    width: 100%;
+}
+
+/* 汇总单元格内的数字类保持右对齐 */
+.CUI-summary-cell.CUI-td-number {
+    justify-content: flex-end;
+}
+
 /* ============================================================
  * 极简 Sticky 多方向冻结布局与交角高优先级样式
+ * 参考 user-test-table.html 的极简方案
  * ============================================================ */
 
-/* 1. 垂直冻结：表头 (z-index: 12) */
-.CUI-table thead.CUI-freeze-thead th {
+/* 1. 垂直冻结：表头整体冻结 (z-index: 12) */
+.CUI-table.CUI-freeze-header thead {
     position: sticky;
     top: 0;
     z-index: 12;
     background-color: var(--bg-gray);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* 2. 垂直冻结：表尾 (z-index: 12) */
-.CUI-table tfoot.CUI-freeze-tfoot td {
+.CUI-table.CUI-freeze-header thead th {
+    background-color: var(--bg-gray);
+}
+
+.CUI-table.CUI-freeze-header thead tr {
+    background-color: var(--bg-gray);
+}
+
+/* 2. 垂直冻结：表尾整体冻结 (z-index: 12) */
+.CUI-table.CUI-freeze-footer tfoot {
     position: sticky;
-    bottom: 0;
+    bottom: -3px;
     z-index: 12;
+    background-color: var(--bg-gray);
+    box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* 给 tfoot 添加伪元素，向下延伸覆盖可能的间隙 */
+.CUI-table.CUI-freeze-footer tfoot::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    height: 3px;
+    background-color: var(--bg-gray);
+}
+
+.CUI-table.CUI-freeze-footer tfoot td,
+.CUI-table.CUI-freeze-footer tfoot th {
     background-color: var(--bg-gray);
     border-top: 2px solid var(--border-color);
 }
 
+.CUI-table.CUI-freeze-footer tfoot tr {
+    background-color: var(--bg-gray);
+}
+
+/* 当启用表尾冻结时，移除容器底部边框以防止子像素间隙暴露 */
+.CUI-table-container.CUI-container-freeze-footer {
+    border-bottom: none;
+}
+
 /* 3. 水平冻结：首列 (z-index: 11) */
-.CUI-table td.CUI-freeze-first,
-.CUI-table th.CUI-freeze-first {
+.CUI-table.CUI-freeze-first-col thead th:first-child,
+.CUI-table.CUI-freeze-first-col tbody td:first-child,
+.CUI-table.CUI-freeze-first-col tfoot td:first-child,
+.CUI-table.CUI-freeze-first-col tfoot th:first-child {
     position: sticky;
     left: 0;
     z-index: 11;
     border-right: 2px solid var(--border-color);
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-color);
+}
+
+.CUI-table.CUI-freeze-first-col thead th:first-child,
+.CUI-table.CUI-freeze-first-col tfoot td:first-child,
+.CUI-table.CUI-freeze-first-col tfoot th:first-child {
+    background-color: var(--bg-gray);
 }
 
 /* 4. 水平冻结：尾列 (z-index: 11) */
-.CUI-table td.CUI-freeze-last,
-.CUI-table th.CUI-freeze-last {
+.CUI-table.CUI-freeze-last-col thead th:last-child,
+.CUI-table.CUI-freeze-last-col tbody td:last-child,
+.CUI-table.CUI-freeze-last-col tfoot td:last-child,
+.CUI-table.CUI-freeze-last-col tfoot th:last-child {
     position: sticky;
     right: 0;
     z-index: 11;
     border-left: 2px solid var(--border-color);
     box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-color);
 }
 
-/* 5. 黄金相交角最高层级 (z-index: 13) */
-/* 表头与首列交角 */
-.CUI-table thead.CUI-freeze-thead th.CUI-freeze-first {
-    position: sticky;
-    top: 0;
-    left: 0;
-    z-index: 13;
+.CUI-table.CUI-freeze-last-col thead th:last-child,
+.CUI-table.CUI-freeze-last-col tfoot td:last-child,
+.CUI-table.CUI-freeze-last-col tfoot th:last-child {
     background-color: var(--bg-gray);
 }
 
-/* 表头与尾列交角 */
-.CUI-table thead.CUI-freeze-thead th.CUI-freeze-last {
-    position: sticky;
-    top: 0;
-    right: 0;
-    z-index: 13;
+/* 5. 提示列样式 - 默认显示 */
+.CUI-table .CUI-hint-cell-left,
+.CUI-table .CUI-hint-cell-right {
+    width: 80px;
+    font-size: var(--text-xs);
     background-color: var(--bg-gray);
+    color: var(--text-secondary);
+    white-space: normal;
+    overflow: auto;
 }
 
-/* 表尾与首列交角 */
-.CUI-table tfoot.CUI-freeze-tfoot td.CUI-freeze-first {
-    position: sticky;
-    bottom: 0;
-    left: 0;
-    z-index: 13;
+.CUI-table .CUI-hint-header-left,
+.CUI-table .CUI-hint-header-right {
+    width: 80px;
     background-color: var(--bg-gray);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: var(--text-xs);
+    text-align: center;
+    white-space: normal;
 }
 
-/* 表尾与尾列交角 */
-.CUI-table tfoot.CUI-freeze-tfoot td.CUI-freeze-last {
-    position: sticky;
-    bottom: 0;
-    right: 0;
-    z-index: 13;
-    background-color: var(--bg-gray);
+.CUI-hint-cell-left,
+.CUI-hint-header-left {
+    border-right: 2px solid var(--border-color);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+.CUI-hint-cell-right,
+.CUI-hint-header-right {
+    border-left: 2px solid var(--border-color);
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+/* 8. 单元格合并样式 */
+.CUI-table td.CUI-cell-merged-col,
+.CUI-table th.CUI-cell-merged-col {
+}
+
+.CUI-table td.CUI-cell-merged-row,
+.CUI-table th.CUI-cell-merged-row {
+    vertical-align: top;
 }
 
 /* ============================================================
@@ -425,20 +571,20 @@
  * 按数据类型的默认列宽规则
  * 列宽只在 thead th 上定义，tbody/tfoot 的 td 由 JS 读取 th
  * 计算宽度后通过 CSS 变量 --cw 同步，不在此重复定义 td 宽度。
- * td 上的 data-type 仅用于对齐等非宽度样式。
+ * td 上的 data-CUI-type 仅用于对齐等非宽度样式。
  * ============================================================ */
 
-.CUI-table th[data-type="id"] {
+.CUI-table th[data-CUI-type="id"] {
     width: 80px;
     min-width: 60px;
 }
 
-.CUI-table th[data-type="number"] {
+.CUI-table th[data-CUI-type="number"] {
     width: 110px;
     min-width: 80px;
 }
 
-.CUI-table th[data-type="currency"] {
+.CUI-table th[data-CUI-type="currency"] {
     width: 150px;
     min-width: 120px;
 }
@@ -449,64 +595,64 @@
  * - idcard: 18位数字 → 13em
  * - date: yyyy-mm-dd 10字符 → 9em
  * - datetime: yyyy-mm-dd hh:mm:ss 19字符 → 14em */
-.CUI-table th[data-type="phone"] {
+.CUI-table th[data-CUI-type="phone"] {
     min-width: 9em;
 }
 
-.CUI-table th[data-type="idcard"] {
+.CUI-table th[data-CUI-type="idcard"] {
     min-width: 13em;
 }
 
-.CUI-table th[data-type="email"] {
+.CUI-table th[data-CUI-type="email"] {
     width: 200px;
     min-width: 150px;
 }
 
-.CUI-table th[data-type="link"] {
+.CUI-table th[data-CUI-type="link"] {
     width: 180px;
     min-width: 120px;
 }
 
-.CUI-table th[data-type="date"] {
+.CUI-table th[data-CUI-type="date"] {
     min-width: 9em;
 }
 
-.CUI-table th[data-type="datetime"] {
+.CUI-table th[data-CUI-type="datetime"] {
     min-width: 14em;
 }
 
 /* phone/idcard/date/datetime 数据单元格居中显示 */
-.CUI-table td[data-type="phone"],
-.CUI-table td[data-type="idcard"],
-.CUI-table td[data-type="date"],
-.CUI-table td[data-type="datetime"] {
+.CUI-table td[data-CUI-type="phone"],
+.CUI-table td[data-CUI-type="idcard"],
+.CUI-table td[data-CUI-type="date"],
+.CUI-table td[data-CUI-type="datetime"] {
     justify-content: center;
 }
 
-.CUI-table td[data-type="phone"] .CUI-cell-text,
-.CUI-table td[data-type="idcard"] .CUI-cell-text,
-.CUI-table td[data-type="date"] .CUI-cell-text,
-.CUI-table td[data-type="datetime"] .CUI-cell-text {
+.CUI-table td[data-CUI-type="phone"] .CUI-cell-text,
+.CUI-table td[data-CUI-type="idcard"] .CUI-cell-text,
+.CUI-table td[data-CUI-type="date"] .CUI-cell-text,
+.CUI-table td[data-CUI-type="datetime"] .CUI-cell-text {
     text-align: center;
 }
 
-.CUI-table th[data-type="image"] {
+.CUI-table th[data-CUI-type="image"] {
     width: 80px;
     min-width: 60px;
     text-align: center;
 }
 
-.CUI-table td[data-type="image"] {
+.CUI-table td[data-CUI-type="image"] {
     justify-content: center;
 }
 
-.CUI-table th[data-type="password"] {
+.CUI-table th[data-CUI-type="password"] {
     width: 160px;
     min-width: 120px;
 }
 
 /* 长文本字段列宽（省略号与展开由 .CUI-td-long / .CUI-cell-text 接管） */
-.CUI-table th[data-type="text-long"] {
+.CUI-table th[data-CUI-type="text-long"] {
     width: 280px;
     min-width: 200px;
     max-width: 400px;
@@ -533,7 +679,7 @@
 
 /* 掩码覆盖层，通过 CSS 伪元素 attr 获取 */
 .CUI-table-cell-masked::before {
-    content: attr(data-masked);
+    content: attr(data-CUI-masked);
     position: absolute;
     left: var(--size-md);
     top: 50%;
@@ -772,4 +918,22 @@
 .CUI-table-status-bar .CUI-badge-close:hover {
     color: var(--error-color);
     opacity: 1;
+}
+
+/* ============================================================
+ * 加载遮罩中间件
+ * ============================================================ */
+.CUI-table-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.78);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: inherit;
+    backdrop-filter: blur(1px);
 }

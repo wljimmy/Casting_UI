@@ -22,14 +22,14 @@
 
         <section>
             <h3>2. 自定义颜色选择器</h3>
-            <p>添加 <code>data-cui-color-picker="true"</code> 属性，使用框架自带的颜色选择器：</p>
+            <p>添加 <code>data-CUI-color-picker="true"</code> 属性，使用框架自带的颜色选择器：</p>
             
             <div class="CUI-box CUI-p-md">
                 <label>选择颜色（自定义选择器）：</label>
-                <input type="color" name="customColor" value="#C2185B" data-cui-color-picker="true">
+                <input type="color" name="customColor" value="#C2185B" data-CUI-color-picker="true">
             </div>
 
-            <pre><code class="language-html">&lt;input type="color" name="customColor" value="#C2185B" data-cui-color-picker="true"&gt;</code></pre>
+            <pre><code class="language-html">&lt;input type="color" name="customColor" value="#C2185B" data-CUI-color-picker="true"&gt;</code></pre>
 
             <p><strong>说明：</strong>使用框架的自定义颜色选择器，提供统一的用户体验和更多功能。框架通过事件委托机制自动绑定点击事件，无需用户编写任何 JavaScript 代码。</p>
         </section>
@@ -41,7 +41,7 @@
                 <form id="colorForm">
                     <div style="margin-bottom: var(--size-md);">
                         <label class="CUI-block CUI-mb-xs">主题颜色（自定义选择器）</label>
-                        <input type="color" name="themeColor" value="#165DFF" data-cui-color-picker="true">
+                        <input type="color" name="themeColor" value="#165DFF" data-CUI-color-picker="true">
                     </div>
                     <div style="margin-bottom: var(--size-md);">
                         <label class="CUI-block CUI-mb-xs">背景颜色（原生选择器）</label>
@@ -55,7 +55,7 @@
             </div>
 
             <pre><code class="language-html">&lt;form id="colorForm"&gt;
-    &lt;input type="color" name="themeColor" value="#165DFF" data-cui-color-picker="true"&gt;
+    &lt;input type="color" name="themeColor" value="#165DFF" data-CUI-color-picker="true"&gt;
     &lt;input type="color" name="bgColor" value="#FFFFFF"&gt;
     &lt;input type="color" name="textColor" value="#333333"&gt;
 &lt;/form&gt;</code></pre>
@@ -167,7 +167,7 @@ console.log('表单颜色数据:', formData);</code></pre>
             
             <ol>
                 <li><strong>DOMObserver 监听</strong>：自动检测页面上的颜色输入框</li>
-                <li><strong>UI 美化</strong>：为带 <code>data-cui-color-picker="true"</code> 的输入框创建自定义 UI（颜色预览方块 + 颜色值显示）</li>
+                <li><strong>UI 美化</strong>：为带 <code>data-CUI-color-picker="true"</code> 的输入框创建自定义 UI（颜色预览方块 + 颜色值显示）</li>
                 <li><strong>事件委托</strong>：通过事件委托机制统一处理点击事件，避免直接绑定到每个元素</li>
                 <li><strong>自动同步</strong>：选择颜色后自动更新输入框的值和显示</li>
             </ol>

@@ -458,7 +458,7 @@ function CUIInputInit() {
     }
 
     function initColorPickerInput(input) {
-        const useCustomPicker = input.dataset.cuiColorPicker === 'true';
+        const useCustomPicker = input.dataset.CUIColorPicker === 'true';
         
         if (!useCustomPicker) {
             return;
@@ -524,7 +524,7 @@ function CUIInputInit() {
             const errorText = input.dataset.error || '';
             const isError = input.dataset.isError === 'true';
             const isSimple = input.classList.contains('CUI-input--simple');
-            const validateType = input.dataset.validate || '';
+            const validateType = input.dataset.CUIValidate || '';
 
             let iconHtml = '';
             if (input.tagName !== 'TEXTAREA') {
@@ -549,7 +549,7 @@ function CUIInputInit() {
             const errorHtml = `<span class="CUI-input__error"><div class="CUI-message CUI-message-error"><div>${errorText || ''}</div></div></span>`;
 
             const boxHtml = `
-<div class="CUI-input-box${isError ? ' CUI-is-error' : ''}"${validateType ? ` data-validate="${validateType}"` : ''}>
+<div class="CUI-input-box${isError ? ' CUI-is-error' : ''}"${validateType ? ` data-CUI-validate="${validateType}"` : ''}>
     ${labelHtml}
     <div class="CUI-input${isSimple ? ' CUI-input--simple' : ''}">
         <input type="${input.type}" name="${input.name}" class="" placeholder="${input.placeholder}" value="${input.value}">
@@ -570,7 +570,7 @@ function CUIInputInit() {
                     const val = input.getAttribute(attr);
                     if (val !== null) newInput.setAttribute(attr, val);
                 });
-                if (input.dataset.validate) newInput.dataset.validate = input.dataset.validate;
+                if (input.dataset.CUIValidate) newInput.dataset.CUIValidate = input.dataset.CUIValidate;
                 if (input.dataset.validatePattern) newInput.dataset.validatePattern = input.dataset.validatePattern;
                 if (input.dataset.info) newInput.dataset.info = input.dataset.info;
             }
@@ -603,7 +603,7 @@ function CUIInputInit() {
                 }
 
                 const labelText = input.dataset.label;
-                const labelPosition = input.dataset.labelPosition || 'left';
+                const labelPosition = input.dataset.CUILabelPosition || 'left';
                 if (labelText) {
                     addLabel(wrapper, labelText, labelPosition);
                 }
@@ -711,10 +711,10 @@ function CUIInputInit() {
     }
 
     function validateInput(input, wrapper) {
-        // 检查父元素的 data-validate 属性（支持 CUI-input-box 结构）
-        const validateType = wrapper && wrapper.dataset.validate 
-            ? wrapper.dataset.validate 
-            : input.dataset.validate;
+        // 检查父元素的 data-CUI-validate 属性（支持 CUI-input-box 结构）
+        const validateType = wrapper && wrapper.dataset.CUIValidate
+            ? wrapper.dataset.CUIValidate
+            : input.dataset.CUIValidate;
         
         if (!validateType) return;
 
@@ -829,7 +829,7 @@ function CUIInputInit() {
             if (!colorWrapper) return;
 
             const input = colorWrapper.querySelector('input[type="color"]');
-            if (!input || input.dataset.cuiColorPicker !== 'true') return;
+            if (!input || input.dataset.CUIColorPicker !== 'true') return;
 
             if (typeof window.openColorPicker === 'function') {
                 try {

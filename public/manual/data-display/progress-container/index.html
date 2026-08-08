@@ -22,67 +22,67 @@ Note: Inline JS is for demo purposes only, not part of framework.
     <h3>简洁模式（plain）</h3>
     <p>使用 plain 参数关闭所有默认装饰效果，变为纯进度条。</p>
     <div class="CUI-box">
-        <div id="progress2" class="CUI-progress" data-value="60" data-type="plain"></div>
+        <div id="progress2" class="CUI-progress" data-value="60" data-CUI-type="plain"></div>
     </div>
-    <pre><code class="language-html">&lt;div id="progress2" class="CUI-progress" data-value="60" data-type="plain"&gt;&lt;/div&gt;</code></pre>
+    <pre><code class="language-html">&lt;div id="progress2" class="CUI-progress" data-value="60" data-CUI-type="plain"&gt;&lt;/div&gt;</code></pre>
 
     <h3>单独控制各项效果</h3>
     <p>可以单独启用或关闭某项效果。</p>
     <div class="CUI-box">
-        <div id="progress3" class="CUI-progress" data-value="75" data-type="label"></div>
-        <div id="progress4" class="CUI-progress" data-value="50" data-type="striped"></div>
-        <div id="progress5" class="CUI-progress" data-value="50" data-type="striped animated"></div>
+        <div id="progress3" class="CUI-progress" data-value="75" data-CUI-type="label"></div>
+        <div id="progress4" class="CUI-progress" data-value="50" data-CUI-type="striped"></div>
+        <div id="progress5" class="CUI-progress" data-value="50" data-CUI-type="striped animated"></div>
     </div>
-    <pre><code class="language-html">&lt;div id="progress3" class="CUI-progress" data-value="75" data-type="label"&gt;&lt;/div&gt;
-&lt;div id="progress4" class="CUI-progress" data-value="50" data-type="striped"&gt;&lt;/div&gt;
-&lt;div id="progress5" class="CUI-progress" data-value="50" data-type="striped animated"&gt;&lt;/div&gt;</code></pre>
+    <pre><code class="language-html">&lt;div id="progress3" class="CUI-progress" data-value="75" data-CUI-type="label"&gt;&lt;/div&gt;
+&lt;div id="progress4" class="CUI-progress" data-value="50" data-CUI-type="striped"&gt;&lt;/div&gt;
+&lt;div id="progress5" class="CUI-progress" data-value="50" data-CUI-type="striped animated"&gt;&lt;/div&gt;</code></pre>
 
     <h3>毛玻璃效果进度条</h3>
     <p>glass参数不包含在默认效果中，需要单独设置。</p>
     <div class="CUI-box">
-        <div id="progress6" class="CUI-progress" data-value="80" data-type="glass"></div>
+        <div id="progress6" class="CUI-progress" data-value="80" data-CUI-type="glass"></div>
     </div>
-    <pre><code class="language-html">&lt;div id="progress6" class="CUI-progress" data-value="80" data-type="glass"&gt;&lt;/div&gt;</code></pre>
+    <pre><code class="language-html">&lt;div id="progress6" class="CUI-progress" data-value="80" data-CUI-type="glass"&gt;&lt;/div&gt;</code></pre>
 
     <h3>组合效果</h3>
     <div class="CUI-box">
-        <div id="progress7" class="CUI-progress" data-value="90" data-type="label striped"></div>
+        <div id="progress7" class="CUI-progress" data-value="90" data-CUI-type="label striped"></div>
     </div>
-    <pre><code class="language-html">&lt;div id="progress7" class="CUI-progress" data-value="90" data-type="label striped"&gt;&lt;/div&gt;</code></pre>
+    <pre><code class="language-html">&lt;div id="progress7" class="CUI-progress" data-value="90" data-CUI-type="label striped"&gt;&lt;/div&gt;</code></pre>
 
     <h3>彩色进度条</h3>
     <div class="CUI-box">
-        <div id="progress-success" class="CUI-progress" data-value="85" data-type="success label"></div>
-        <div id="progress-warning" class="CUI-progress" data-value="65" data-type="warning label"></div>
-        <div id="progress-error" class="CUI-progress" data-value="35" data-type="error label"></div>
-        <div id="progress-info" class="CUI-progress" data-value="55" data-type="info label"></div>
+        <div id="progress-success" class="CUI-progress" data-value="85" data-CUI-type="success label"></div>
+        <div id="progress-warning" class="CUI-progress" data-value="65" data-CUI-type="warning label"></div>
+        <div id="progress-error" class="CUI-progress" data-value="35" data-CUI-type="error label"></div>
+        <div id="progress-info" class="CUI-progress" data-value="55" data-CUI-type="info label"></div>
     </div>
-    <pre><code class="language-html">&lt;div id="progress-success" class="CUI-progress" data-value="85" data-type="success label"&gt;&lt;/div&gt;
-&lt;div id="progress-warning" class="CUI-progress" data-value="65" data-type="warning label"&gt;&lt;/div&gt;
-&lt;div id="progress-error" class="CUI-progress" data-value="35" data-type="error label"&gt;&lt;/div&gt;
-&lt;div id="progress-info" class="CUI-progress" data-value="55" data-type="info label"&gt;&lt;/div&gt;</code></pre>
+    <pre><code class="language-html">&lt;div id="progress-success" class="CUI-progress" data-value="85" data-CUI-type="success label"&gt;&lt;/div&gt;
+&lt;div id="progress-warning" class="CUI-progress" data-value="65" data-CUI-type="warning label"&gt;&lt;/div&gt;
+&lt;div id="progress-error" class="CUI-progress" data-value="35" data-CUI-type="error label"&gt;&lt;/div&gt;
+&lt;div id="progress-info" class="CUI-progress" data-value="55" data-CUI-type="info label"&gt;&lt;/div&gt;</code></pre>
 
     <h3>自定义颜色进度条</h3>
     <p>使用data-color属性设置自定义颜色（十六进制格式）。data-color优先于data-type中的颜色。</p>
     <div class="CUI-box">
-        <div id="progress-custom1" class="CUI-progress" data-value="70" data-type="label" data-color="#ff6b6b"></div>
-        <div id="progress-custom2" class="CUI-progress" data-value="60" data-type="label" data-color="#4ecdc4"></div>
-        <div id="progress-custom3" class="CUI-progress" data-value="80" data-type="label" data-color="#45b7d1"></div>
+        <div id="progress-custom1" class="CUI-progress" data-value="70" data-CUI-type="label" data-color="#ff6b6b"></div>
+        <div id="progress-custom2" class="CUI-progress" data-value="60" data-CUI-type="label" data-color="#4ecdc4"></div>
+        <div id="progress-custom3" class="CUI-progress" data-value="80" data-CUI-type="label" data-color="#45b7d1"></div>
     </div>
-    <pre><code class="language-html">&lt;div id="progress-custom1" class="CUI-progress" data-value="70" data-type="label" data-color="#ff6b6b"&gt;&lt;/div&gt;
-&lt;div id="progress-custom2" class="CUI-progress" data-value="60" data-type="label" data-color="#4ecdc4"&gt;&lt;/div&gt;
-&lt;div id="progress-custom3" class="CUI-progress" data-value="80" data-type="label" data-color="#45b7d1"&gt;&lt;/div&gt;</code></pre>
+    <pre><code class="language-html">&lt;div id="progress-custom1" class="CUI-progress" data-value="70" data-CUI-type="label" data-color="#ff6b6b"&gt;&lt;/div&gt;
+&lt;div id="progress-custom2" class="CUI-progress" data-value="60" data-CUI-type="label" data-color="#4ecdc4"&gt;&lt;/div&gt;
+&lt;div id="progress-custom3" class="CUI-progress" data-value="80" data-CUI-type="label" data-color="#45b7d1"&gt;&lt;/div&gt;</code></pre>
 
     <h3>自定义尺寸进度条</h3>
     <p>使用W和H参数自定义宽度和高度。W参数设置宽度（最小50px），H参数设置bar高度（最小14px）。W/H参数优先于预定义的data-size。</p>
     <div class="CUI-box">
-        <div id="progress-size1" class="CUI-progress" data-value="75" data-type="label W300 H20"></div>
-        <div id="progress-size2" class="CUI-progress" data-value="60" data-type="label W200 H28"></div>
-        <div id="progress-size3" class="CUI-progress" data-value="85" data-type="label W400 H14"></div>
+        <div id="progress-size1" class="CUI-progress" data-value="75" data-CUI-type="label W300 H20"></div>
+        <div id="progress-size2" class="CUI-progress" data-value="60" data-CUI-type="label W200 H28"></div>
+        <div id="progress-size3" class="CUI-progress" data-value="85" data-CUI-type="label W400 H14"></div>
     </div>
-    <pre><code class="language-html">&lt;div id="progress-size1" class="CUI-progress" data-value="75" data-type="label W300 H20"&gt;&lt;/div&gt;
-&lt;div id="progress-size2" class="CUI-progress" data-value="60" data-type="label W200 H28"&gt;&lt;/div&gt;
-&lt;div id="progress-size3" class="CUI-progress" data-value="85" data-type="label W400 H14"&gt;&lt;/div&gt;</code></pre>
+    <pre><code class="language-html">&lt;div id="progress-size1" class="CUI-progress" data-value="75" data-CUI-type="label W300 H20"&gt;&lt;/div&gt;
+&lt;div id="progress-size2" class="CUI-progress" data-value="60" data-CUI-type="label W200 H28"&gt;&lt;/div&gt;
+&lt;div id="progress-size3" class="CUI-progress" data-value="85" data-CUI-type="label W400 H14"&gt;&lt;/div&gt;</code></pre>
 
     <h3>预定义尺寸</h3>
     <p>使用data-size属性设置预定义尺寸（sm/md/lg/xl）。</p>

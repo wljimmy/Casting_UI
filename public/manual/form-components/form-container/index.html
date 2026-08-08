@@ -42,7 +42,7 @@
     <div class="CUI-box">
         <h4>最简表单写法</h4>
         <p>只需为 form 添加 <code>class="CUI-form"</code>，框架自动完成所有布局处理。</p>
-        <form class="CUI-form" data-form-cols="12">
+        <form class="CUI-form" data-CUI-form-cols="12">
             <div>
                 <div>姓名</div>
                 <input type="text" name="name1" class="CUI-input" placeholder="请输入姓名">
@@ -52,7 +52,7 @@
             <button type="submit" class="CUI-btn CUI-btn-primary">提交</button>
         </form>
     </div>
-    <pre><code class="language-html">&lt;form class="CUI-form" data-form-cols="12"&gt;
+    <pre><code class="language-html">&lt;form class="CUI-form" data-CUI-form-cols="12"&gt;
     &lt;div&gt;
         &lt;div&gt;姓名&lt;/div&gt;
         &lt;input type="text" name="name" class="CUI-input" placeholder="请输入姓名"&gt;
@@ -66,7 +66,7 @@
     <div class="CUI-box">
         <p>通过 <code>data-form-cols</code> 控制表单总列数，实现不同的布局密度：</p>
         <h4>12列布局（3列展示）</h4>
-        <form class="CUI-form" data-form-cols="12">
+        <form class="CUI-form" data-CUI-form-cols="12">
             <div>
                 <div>姓名</div>
                 <input type="text" name="name2" class="CUI-input" placeholder="请输入姓名">
@@ -79,7 +79,7 @@
         </form>
 
         <h4 class="CUI-mt-lg">8列布局（2列展示）</h4>
-        <form class="CUI-form" data-form-cols="8">
+        <form class="CUI-form" data-CUI-form-cols="8">
             <div>
                 <div>姓名</div>
                 <input type="text" name="name3" class="CUI-input" placeholder="请输入姓名">
@@ -90,7 +90,7 @@
         </form>
 
         <h4 class="CUI-mt-lg">4列布局（单列展示）</h4>
-        <form class="CUI-form" data-form-cols="4">
+        <form class="CUI-form" data-CUI-form-cols="4">
             <div>
                 <div>姓名</div>
                 <input type="text" name="name4" class="CUI-input" placeholder="请输入姓名">
@@ -107,7 +107,7 @@
         <div class="CUI-grid CUI-grid-12c">
             <div class="CUI-span-6c">
                 <h4>标签在左（默认）</h4>
-                <form class="CUI-form" data-form-cols="12">
+                <form class="CUI-form" data-CUI-form-cols="12">
                     <div>
                         <div>姓名</div>
                         <input type="text" name="name5" class="CUI-input" placeholder="请输入姓名">
@@ -118,12 +118,12 @@
             </div>
             <div class="CUI-span-6c">
                 <h4>标签在上</h4>
-                <form class="CUI-form" data-form-cols="12">
-                    <div data-label-position="top">
+                <form class="CUI-form" data-CUI-form-cols="12">
+                    <div data-CUI-label-position="top">
                         <div>姓名</div>
                         <input type="text" name="name6" class="CUI-input" placeholder="请输入姓名">
                     </div>
-                    <div data-label-position="top">
+                    <div data-CUI-label-position="top">
                         <div>邮箱</div>
                         <input type="email" name="email6" class="CUI-input" placeholder="请输入邮箱">
                     </div>
@@ -141,7 +141,7 @@
 
 &lt;!-- 标签在上 --&gt;
 &lt;form class="CUI-form"&gt;
-    &lt;div data-label-position="top"&gt;
+    &lt;div data-CUI-label-position="top"&gt;
         &lt;div&gt;姓名&lt;/div&gt;
         &lt;input type="text" class="CUI-input" placeholder="请输入姓名"&gt;
     &lt;/div&gt;
@@ -150,7 +150,7 @@
     <h3>跨列布局（灵活的CUI-span）</h3>
     <div class="CUI-box">
         <p>通过 <code>CUI-span-Xc</code> 控制输入框占列数，实现灵活的布局：</p>
-        <form class="CUI-form" data-form-cols="12">
+        <form class="CUI-form" data-CUI-form-cols="12">
             <div>
                 <div>省</div>
                 <select name="province1" class="CUI-input CUI-span-1c">
@@ -176,7 +176,7 @@
             <button type="submit" class="CUI-btn CUI-btn-primary">提交</button>
         </form>
     </div>
-    <pre><code class="language-html">&lt;form class="CUI-form" data-form-cols="12"&gt;
+    <pre><code class="language-html">&lt;form class="CUI-form" data-CUI-form-cols="12"&gt;
     &lt;div&gt;
         &lt;div&gt;省&lt;/div&gt;
         &lt;select name="province" class="CUI-input CUI-span-1c"&gt;...&lt;/select&gt;
@@ -192,7 +192,7 @@
 
     <h3>完整示例：用户注册表单</h3>
     <div class="CUI-box">
-        <form class="CUI-form" data-form-cols="12">
+        <form class="CUI-form" data-CUI-form-cols="12">
             <div>
                 <div>用户名</div>
                 <input type="text" name="username1" class="CUI-input" data-icon="user" placeholder="请输入用户名">
@@ -212,7 +212,7 @@
                     <option value="other">其他</option>
                 </select>
             </div>
-            <div data-label-position="top">
+            <div data-CUI-label-position="top">
                 <div>个人简介</div>
                 <textarea name="bio1" class="CUI-input" placeholder="请输入个人简介" rows="3"></textarea>
             </div>

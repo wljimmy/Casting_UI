@@ -712,6 +712,63 @@ function runTests() {
         assert.strictEqual(entry3.sortRules.length, 1);
     });
 
+    test('26. 展示类表格配置 - display类型', () => {
+        registry.register('test-table-26', { type: 'display' });
+        const entry = registry.get('test-table-26');
+        assert.strictEqual(entry.config.type, 'display');
+        assert.strictEqual(entry.config.striped, true);
+    });
+
+    test('27. 功能类表格配置 - functional类型', () => {
+        registry.register('test-table-27', { type: 'functional' });
+        const entry = registry.get('test-table-27');
+        assert.strictEqual(entry.config.type, 'functional');
+    });
+
+    test('28. 冻结配置 - 默认值', () => {
+        registry.register('test-table-28', { type: 'functional' });
+        const entry = registry.get('test-table-28');
+        assert.deepStrictEqual(entry.filterRules, []);
+        assert.deepStrictEqual(entry.sortRules, []);
+    });
+
+    test('29. 规则清空 - clearRules', () => {
+        registry.register('test-table-29', { type: 'functional' });
+        registry.setStatus('test-table-29', 'success');
+        dataLayer.processRawData('test-table-29', testData, headers);
+        dataLayer.filter('test-table-29', { field: '姓名', operator: '=', value: '张三' });
+        dataLayer.sort('test-table-29', { field: '年龄', order: 'asc' });
+        dataLayer.search('test-table-29', '测试');
+        
+        const entry1 = registry.get('test-table-29');
+        assert.strictEqual(entry1.filterRules.length, 1);
+        assert.strictEqual(entry1.sortRules.length, 1);
+        assert.strictEqual(entry1.searchRules.keyword, '测试');
+
+        registry.setSearchRules('test-table-29', { keyword: '', mode: 'fuzzy', field: 'all' });
+        registry.removeFilterRule('test-table-29', 0);
+        registry.removeSortRule('test-table-29', '年龄');
+
+        const entry2 = registry.get('test-table-29');
+        assert.strictEqual(entry2.filterRules.length, 0);
+        assert.strictEqual(entry2.sortRules.length, 0);
+        assert.strictEqual(entry2.searchRules.keyword, '');
+    });
+
+    test('30. 分页重置 - setPageState', () => {
+        registry.register('test-table-30', { type: 'functional' });
+        registry.setStatus('test-table-30', 'success');
+        registry.setPageState('test-table-30', { pageNum: 5, pageSize: 10 });
+        const entry = registry.get('test-table-30');
+        assert.strictEqual(entry.pageState.pageNum, 5);
+        assert.strictEqual(entry.pageState.pageSize, 10);
+
+        registry.setPageState('test-table-30', { pageNum: 1 });
+        const entry2 = registry.get('test-table-30');
+        assert.strictEqual(entry2.pageState.pageNum, 1);
+        assert.strictEqual(entry2.pageState.pageSize, 10);
+    });
+
     console.log('\n====================================');
     console.log(`测试结果: ${passed} 通过 / ${failed} 失败`);
     console.log('====================================\n');

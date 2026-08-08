@@ -4,16 +4,16 @@
 
     <h3>快速上手</h3>
     <div class="CUI-box">
-        <p>只需为输入框添加 <code>class="CUI-input-box"</code> 和 <code>data-validate="idcard-adv"</code>，框架自动完成身份证解析和验证：</p>
+        <p>只需为输入框添加 <code>class="CUI-input-box"</code> 和 <code>data-CUI-validate="idcard-adv"</code>，框架自动完成身份证解析和验证：</p>
         <div class="CUI-grid CUI-grid-12c CUI-mt-md CUI-mb-md">
             <div class="CUI-span-6c">
-                <input type="text" name="idcardDemo" class="CUI-input-box" data-label="身份证号码" data-validate="idcard-adv" placeholder="请输入18位身份证号">
+                <input type="text" name="idcardDemo" class="CUI-input-box" data-label="身份证号码" data-CUI-validate="idcard-adv" placeholder="请输入18位身份证号">
             </div>
         </div>
     </div>
     <pre><code class="language-html">&lt;input type="text" name="idcard" class="CUI-input-box" 
        data-label="身份证号码" 
-       data-validate="idcard-adv" 
+       data-CUI-validate="idcard-adv" 
        placeholder="请输入18位身份证号"&gt;</code></pre>
 
     <hr class="CUI-hr">
@@ -74,12 +74,12 @@
             </thead>
             <tbody>
                 <tr>
-                    <td><code>data-validate="idcard"</code></td>
+                    <td><code>data-CUI-validate="idcard"</code></td>
                     <td>普通验证</td>
                     <td>仅正则匹配（18位数字或17位数字+X）</td>
                 </tr>
                 <tr>
-                    <td><code>data-validate="idcard-adv"</code></td>
+                    <td><code>data-CUI-validate="idcard-adv"</code></td>
                     <td>高级验证</td>
                     <td>完整解析（省/市/区/生日/性别）+ 校验码验证</td>
                 </tr>
@@ -135,7 +135,7 @@ console.log(idcardState.isValid);        // 是否有效</code></pre>
     <div class="CUI-box">
         <div class="CUI-grid CUI-grid-12c CUI-mt-md CUI-mb-md">
             <div class="CUI-span-6c">
-                <input type="text" name="idcardBasic" class="CUI-input-box" data-label="身份证号" data-validate="idcard-adv" placeholder="输入真实身份证号测试">
+                <input type="text" name="idcardBasic" class="CUI-input-box" data-label="身份证号" data-CUI-validate="idcard-adv" placeholder="输入真实身份证号测试">
             </div>
         </div>
         <p class="CUI-text-sm CUI-text-muted">输入身份证号后，失焦时自动验证并显示解析结果</p>
@@ -148,7 +148,7 @@ console.log(idcardState.isValid);        // 是否有效</code></pre>
             <div class="CUI-span-6c">
                 <input type="text" name="idcardCustom" class="CUI-input-box" 
                        data-label="身份证号" 
-                       data-validate="idcard-adv" 
+                       data-CUI-validate="idcard-adv" 
                        data-info="请输入18位身份证号码" 
                        data-error="身份证信息有误，请检查"
                        placeholder="自定义提示示例">
@@ -156,7 +156,7 @@ console.log(idcardState.isValid);        // 是否有效</code></pre>
         </div>
         <pre><code class="language-html">&lt;input type="text" name="idcard" class="CUI-input-box" 
        data-label="身份证号" 
-       data-validate="idcard-adv" 
+       data-CUI-validate="idcard-adv" 
        data-info="自定义提示" 
        data-error="自定义错误信息"&gt;</code></pre>
     </div>
@@ -166,10 +166,10 @@ console.log(idcardState.isValid);        // 是否有效</code></pre>
         <form id="idcardForm">
             <div class="CUI-grid CUI-grid-12c">
                 <div class="CUI-span-4c">
-                    <input type="text" name="name" class="CUI-input-box" data-label="姓名" data-validate="required" placeholder="请输入姓名">
+                    <input type="text" name="name" class="CUI-input-box" data-label="姓名" data-CUI-validate="required" placeholder="请输入姓名">
                 </div>
                 <div class="CUI-span-4c">
-                    <input type="text" name="idcard" class="CUI-input-box" data-label="身份证号" data-validate="idcard-adv" placeholder="请输入身份证号">
+                    <input type="text" name="idcard" class="CUI-input-box" data-label="身份证号" data-CUI-validate="idcard-adv" placeholder="请输入身份证号">
                 </div>
                 <div class="CUI-span-4c">
                     <button type="button" class="btn btn-primary" onclick="checkForm()">提交验证</button>
@@ -251,7 +251,7 @@ console.log(isValid);  // true 或 false</code></pre>
         <p>身份证高级验证器与格式化模块配合使用时，输入框会自动格式化显示：</p>
         <div class="CUI-grid CUI-grid-12c CUI-mt-md CUI-mb-md">
             <div class="CUI-span-6c">
-                <input type="text" name="idcardFormatted" class="CUI-input-box" data-label="格式化显示" data-validate="idcard-adv" placeholder="输入身份证号">
+                <input type="text" name="idcardFormatted" class="CUI-input-box" data-label="格式化显示" data-CUI-validate="idcard-adv" placeholder="输入身份证号">
             </div>
         </div>
         <p class="CUI-text-sm CUI-text-muted">格式化效果：<code>11 01 01 1990 03 07 723 X</code></p>

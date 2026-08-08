@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>表格重构全量验证测试</title>
+    <title>表格冻结功能测试 | Casting UI</title>
     <link rel="stylesheet" href="/modules/css/core.css">
     <link rel="stylesheet" href="/modules/css/container.css">
     <link rel="stylesheet" href="/modules/css/layout.css">
@@ -25,79 +25,370 @@
         <header>
             <div class="CUI-grid CUI-grid-v-center">
                 <div>
-                    <h1>表格重构全量字段验证</h1>
-                    <p class="CUI-text--light">全量字段加载 · 含长文本高度限制 · 掩码等宽字体 · 按类型列宽 · 多方向冻结</p>
+                    <h1>表格冻结功能测试</h1>
+                    <p class="CUI-text--light">使用外部测试数据（每页50行）· THEAD/TFOOT整体冻结 · 提示列高级模式</p>
                 </div>
             </div>
         </header>
 
         <main class="CUI-content">
             <section class="CUI-section">
-                <table class="CUI-table" id="test-table"
-                    data-freeze-header="true"
-                    data-freeze-first-col="true"
-                    data-freeze-last-col="false"
-                    data-freeze-footer="false"
-                    data-cui-table='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"functional","striped":true,"pageSize":10}'>
-                    <thead>
-                        <tr>
-                            <th data-field="ID" data-type="number" style="width: 64px;">ID</th>
-                            <th data-field="姓名" data-type="text" style="width: 100px;">姓名</th>
-                            <th data-field="性别" data-type="text" style="width: 64px;">性别</th>
-                            <th data-field="身份证号" data-type="idcard">身份证号</th>
-                            <th data-field="手机号" data-type="phone">手机号</th>
-                            <th data-field="邮箱" data-type="email">邮箱</th>
-                            <th data-field="出生日期" data-type="date">出生日期</th>
-                            <th data-field="年龄" data-type="number" data-summary="avg">年龄</th>
-                            <th data-field="省份" data-type="text" style="width: 120px;">省份</th>
-                            <th data-field="城市" data-type="text" style="width: 120px;">城市</th>
-                            <th data-field="详细地址" data-type="text-long" style="width: 260px;">详细地址</th>
-                            <th data-field="邮编" data-type="text" style="width: 90px;">邮编</th>
-                            <th data-field="公司名称" data-type="text" style="width: 200px;">公司名称</th>
-                            <th data-field="职位" data-type="text" style="width: 130px;">职位</th>
-                            <th data-field="入职日期" data-type="date">入职日期</th>
-                            <th data-field="薪资" data-type="currency" data-summary="sum">薪资</th>
-                            <th data-field="学历" data-type="text" style="width: 90px;">学历</th>
-                            <th data-field="专业" data-type="text" style="width: 140px;">专业</th>
-                            <th data-field="毕业院校" data-type="text" style="width: 220px;">毕业院校</th>
-                            <th data-field="个人简介" data-type="text-long" style="width: 320px;">个人简介</th>
-                            <th data-field="头像链接" data-type="image" style="width: 80px;">头像</th>
-                            <th data-field="备注" data-type="text-long" style="width: 300px;">备注</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                    <tfoot>
-                        <tr>
-                            <td>汇总</td>
-                            <td></td><td></td><td></td><td></td><td></td>
-                            <td></td><td></td><td></td><td></td><td></td>
-                            <td></td><td></td><td></td><td></td><td></td>
-                            <td></td><td></td><td></td><td></td><td></td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
+                <h2>测试用例 1：简单冻结表头 + 首列</h2>
+                <p>data-freeze-header="true" + data-frozen-left="true"</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"header":true,"left":true}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="15">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 2：简单冻结表头 + 表尾 + 首列 + 尾列</h2>
+                <p>data-freeze-header + data-freeze-footer + data-frozen-left + data-frozen-right</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                       
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"header":true,"footer":true,"left":true,"right":true}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number" data-CUI-summary="avg">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency" data-CUI-summary="sum">薪资</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot></tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 3：高级模式 - 左侧提示列</h2>
+                <p>data-frozen-left='["ID", "姓名"]'（自动冻结表头）</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"left":["ID","姓名"]}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                                <th data-CUI-field="专业" data-CUI-type="text" style="width: 140px;">专业</th>
+                                <th data-CUI-field="毕业院校" data-CUI-type="text" style="width: 220px;">毕业院校</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="17">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 4：高级模式 - 右侧提示列</h2>
+                <p>data-frozen-right='["职位", "薪资"]'</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"right":["职位","薪资"]}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="15">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 5：高级模式 - 左右提示列同时使用</h2>
+                <p>data-frozen-left='["ID", "姓名"]' + data-frozen-right='["职位", "薪资"]'</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"left":["ID","姓名"],"right":["职位","薪资"]}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="身份证号" data-CUI-type="idcard">身份证号</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="出生日期" data-CUI-type="date">出生日期</th>
+                                <th data-CUI-field="年龄" data-CUI-type="number">年龄</th>
+                                <th data-CUI-field="省份" data-CUI-type="text" style="width: 120px;">省份</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="详细地址" data-CUI-type="text-long" style="width: 260px;">详细地址</th>
+                                <th data-CUI-field="公司名称" data-CUI-type="text" style="width: 200px;">公司名称</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="15">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 6：多级表头 + 冻结</h2>
+                <p>多级表头结构 + data-frozen-left="true"</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"header":true,"left":true}}'>
+                        <thead>
+                            <tr>
+                                <th colspan="2" style="width: 164px;">基本信息</th>
+                                <th colspan="3" style="width: 384px;">联系方式</th>
+                                <th colspan="2" style="width: 230px;">工作信息</th>
+                                <th colspan="2" style="width: 230px;">学历信息</th>
+                            </tr>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                                <th data-CUI-field="学历" data-CUI-type="text" style="width: 90px;">学历</th>
+                                <th data-CUI-field="专业" data-CUI-type="text" style="width: 140px;">专业</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="9">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 7：多级表头 + 提示列</h2>
+                <p>多级表头 + data-frozen-left='["ID", "姓名"]'</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"left":["ID","姓名"]}}'>
+                        <thead>
+                            <tr>
+                                <th colspan="2" style="width: 164px;">基本信息</th>
+                                <th colspan="3" style="width: 384px;">联系方式</th>
+                                <th colspan="2" style="width: 230px;">工作信息</th>
+                            </tr>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="7">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 8：提示列 + 表尾冻结</h2>
+                <p>data-frozen-left='["ID", "姓名"]' + data-freeze-footer="true"</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"footer":true,"left":["ID","姓名"]}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency" data-CUI-summary="sum">薪资</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot></tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 9：旧参数兼容测试</h2>
+                <p>使用旧参数 data-freeze-first-col="true"</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"header":true,"left":true}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="7">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 10：无冻结（对比基准）</h2>
+                <p>不设置任何冻结参数</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="8">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+
+            <section class="CUI-section">
+                <h2>测试用例 11：自定义提示列宽度</h2>
+                <p>data-frozen-left-width="100" + data-frozen-right-width="120"</p>
+                <div class="CUI-table-container">
+                    <table class="CUI-table CUI-table-striped"
+                        data-CUI-dataTable="true"
+                       
+                       
+                       
+                       
+                        data-CUI-config='{"dataSource":"/测试用数据/仿真测试数据（JSON格式）.json","type":"display","striped":true,"pageSize":50,"freeze":{"leftWidth":100,"rightWidth":120,"left":["ID","姓名"],"right":["职位","薪资"]}}'>
+                        <thead>
+                            <tr>
+                                <th data-CUI-field="ID" data-CUI-type="number" style="width: 64px;">ID</th>
+                                <th data-CUI-field="姓名" data-CUI-type="text" style="width: 100px;">姓名</th>
+                                <th data-CUI-field="性别" data-CUI-type="text" style="width: 64px;">性别</th>
+                                <th data-CUI-field="手机号" data-CUI-type="phone">手机号</th>
+                                <th data-CUI-field="邮箱" data-CUI-type="email">邮箱</th>
+                                <th data-CUI-field="城市" data-CUI-type="text" style="width: 120px;">城市</th>
+                                <th data-CUI-field="职位" data-CUI-type="text" style="width: 130px;">职位</th>
+                                <th data-CUI-field="薪资" data-CUI-type="currency">薪资</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                            <tr><td colspan="8">汇总</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
             </section>
         </main>
     </div>
 
     <script type="module" src="/modules/js/index.js"></script>
-
-    <script>
-        document.addEventListener('cui-pipeline-complete', function () {
-            console.log('[测试日志] 框架初始化完成');
-            
-            setTimeout(() => {
-                const tableEntry = window.CUI.table.getTableEntry('test-table');
-                if (tableEntry) {
-                    console.log('[测试日志] 表格注册表状态:', tableEntry.initStatus);
-                    console.log('[测试日志] 数据总行数:', tableEntry.rawData.length);
-                    if (tableEntry.rawData.length > 0) {
-                        console.log('[测试日志] 第一行数据:', tableEntry.rawData[0]);
-                    }
-                }
-            }, 1000);
-        });
-    </script>
 </body>
 </html>

@@ -69,7 +69,7 @@
             <div class="CUI-message CUI-message-info CUI-mb-lg">
                 <div>
                     <strong>测试说明：</strong><br>
-                    1. 使用 <code>data-validate="idcard-adv"</code> 启用高级验证<br>
+                    1. 使用 <code>data-CUI-validate="idcard-adv"</code> 启用高级验证<br>
                     2. 实时解析省/市/区/生日/性别<br>
                     3. 完整验证包含校验码验证<br>
                     4. 状态挂靠在注册表 node.idcard 中
@@ -80,7 +80,7 @@
             <div class="test-section">
                 <h2 class="test-title">测试1：高级身份证验证（带消息框）</h2>
                 
-                <div class="CUI-input-box" data-validate="idcard-adv" data-label="身份证号" data-hint="请输入18位身份证号码">
+                <div class="CUI-input-box" data-CUI-validate="idcard-adv" data-label="身份证号" data-hint="请输入18位身份证号码">
                     <input type="text" name="idcard_adv_test1" class="CUI-input" placeholder="请输入身份证号" maxlength="18">
                     <span class="CUI-input__info">
                         <div class="CUI-message CUI-message-info">
@@ -103,7 +103,7 @@
             <div class="test-section">
                 <h2 class="test-title">测试2：高级身份证验证（无 message 框）</h2>
                 
-                <div class="CUI-input-box" data-validate="idcard-adv" data-label="身份证号">
+                <div class="CUI-input-box" data-CUI-validate="idcard-adv" data-label="身份证号">
                     <input type="text" name="idcard_adv_test2" class="CUI-input" placeholder="请输入身份证号" maxlength="18">
                 </div>
                 
@@ -116,7 +116,7 @@
             <div class="test-section">
                 <h2 class="test-title">测试3：高级身份证验证（自定义信息）</h2>
                 
-                <div class="CUI-input-box" data-validate="idcard-adv" data-label="身份证号" data-hint="请输入正确的18位身份证">
+                <div class="CUI-input-box" data-CUI-validate="idcard-adv" data-label="身份证号" data-hint="请输入正确的18位身份证">
                     <input type="text" name="idcard_adv_custom" class="CUI-input" placeholder="请输入身份证号" maxlength="18">
                     <span class="CUI-input__info">
                         <div class="CUI-message CUI-message-info">
@@ -137,7 +137,7 @@
             <div class="test-section">
                 <h2 class="test-title">测试4：普通身份证验证（对比）</h2>
                 
-                <div class="CUI-input-box" data-validate="idcard" data-label="身份证号" data-error="身份证号格式错误">
+                <div class="CUI-input-box" data-CUI-validate="idcard" data-label="身份证号" data-error="身份证号格式错误">
                     <input type="text" name="idcard_normal" class="CUI-input" placeholder="请输入身份证号" maxlength="18">
                     <div class="CUI-input__error">
                         <div class="CUI-message CUI-message-error"><div>身份证号格式错误</div></div>
@@ -163,16 +163,16 @@
                 <form id="idcardFormTest">
                     <div class="CUI-grid CUI-grid-12c">
                         <div class="CUI-span-6c">
-                            <input type="text" name="name" class="CUI-input-box" data-label="姓名" data-validate="required" placeholder="请输入姓名">
+                            <input type="text" name="name" class="CUI-input-box" data-label="姓名" data-CUI-validate="required" placeholder="请输入姓名">
                         </div>
                         <div class="CUI-span-6c">
-                            <input type="text" name="idcard" class="CUI-input-box" data-label="身份证号" data-validate="idcard-adv" placeholder="请输入18位身份证号">
+                            <input type="text" name="idcard" class="CUI-input-box" data-label="身份证号" data-CUI-validate="idcard-adv" placeholder="请输入18位身份证号">
                         </div>
                         <div class="CUI-span-6c">
-                            <input type="tel" name="phone" class="CUI-input-box" data-label="手机号" data-validate="phone" placeholder="请输入手机号">
+                            <input type="tel" name="phone" class="CUI-input-box" data-label="手机号" data-CUI-validate="phone" placeholder="请输入手机号">
                         </div>
                         <div class="CUI-span-6c">
-                            <input type="email" name="email" class="CUI-input-box" data-label="邮箱" data-validate="email" placeholder="请输入邮箱">
+                            <input type="email" name="email" class="CUI-input-box" data-label="邮箱" data-CUI-validate="email" placeholder="请输入邮箱">
                         </div>
                     </div>
                 </form>

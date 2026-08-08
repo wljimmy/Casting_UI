@@ -93,7 +93,7 @@
                 <tr>
                     <td><code>data-validate-pattern</code></td>
                     <td>CUI-input / CUI-input-box</td>
-                    <td><code>data-validate="custom"</code> 时的自定义正则表达式字符串</td>
+                    <td><code>data-CUI-validate="custom"</code> 时的自定义正则表达式字符串</td>
                 </tr>
             </tbody>
         </table>
@@ -172,7 +172,7 @@
                 <input type="text" name="name" class="CUI-input" data-label="姓名" placeholder="">
             </div>
             <div class="CUI-span-6c">
-                <input type="text" name="email" class="CUI-input" data-label="邮箱地址" data-label-position="top" placeholder="">
+                <input type="text" name="email" class="CUI-input" data-label="邮箱地址" data-CUI-label-position="top" placeholder="">
             </div>
         </div>
     </div>
@@ -180,7 +180,7 @@
 &lt;input type="text" name="name" class="CUI-input" data-label="姓名"&gt;
 
 &lt;!-- 标签在上 --&gt;
-&lt;input type="text" name="email" class="CUI-input" data-label="邮箱地址" data-label-position="top"&gt;</code></pre>
+&lt;input type="text" name="email" class="CUI-input" data-label="邮箱地址" data-CUI-label-position="top"&gt;</code></pre>
 
     <hr class="CUI-hr">
 
@@ -189,13 +189,13 @@
         <p>添加 <code>CUI-input--simple</code> 类实现极简风格：</p>
         <div class="CUI-grid CUI-grid-12c CUI-mt-md CUI-mb-md">
             <div class="CUI-span-4c">
-                <input type="text" name="simple1" class="CUI-input CUI-input--simple" placeholder="简约搜索" data-label="搜索" data-label-position="top">
+                <input type="text" name="simple1" class="CUI-input CUI-input--simple" placeholder="简约搜索" data-label="搜索" data-CUI-label-position="top">
             </div>
             <div class="CUI-span-4c">
-                <input type="text" name="simple2" class="CUI-input CUI-input--simple" placeholder="简约邮箱" data-label="邮箱" data-label-position="top">
+                <input type="text" name="simple2" class="CUI-input CUI-input--simple" placeholder="简约邮箱" data-label="邮箱" data-CUI-label-position="top">
             </div>
             <div class="CUI-span-4c">
-                <input type="text" name="simple3" class="CUI-input CUI-input--simple" placeholder="简约电话" data-label="电话" data-label-position="top">
+                <input type="text" name="simple3" class="CUI-input CUI-input--simple" placeholder="简约电话" data-label="电话" data-CUI-label-position="top">
             </div>
         </div>
     </div>
@@ -293,48 +293,48 @@
         <p>普通输入框验证时添加 <code>CUI-input--error</code> 类（红色边框），错误信息通过 <code>title</code> 属性显示（鼠标悬停可看）：</p>
         <div class="CUI-grid CUI-grid-12c CUI-mt-md CUI-mb-md">
             <div class="CUI-span-4c">
-                <input type="text" name="demoIdcard" class="CUI-input" data-validate="idcard" placeholder="身份证号" data-error="身份证号必须是18位">
+                <input type="text" name="demoIdcard" class="CUI-input" data-CUI-validate="idcard" placeholder="身份证号" data-error="身份证号必须是18位">
             </div>
             <div class="CUI-span-4c">
-                <input type="text" name="demoPhone" class="CUI-input" data-validate="phone" placeholder="手机号">
+                <input type="text" name="demoPhone" class="CUI-input" data-CUI-validate="phone" placeholder="手机号">
             </div>
             <div class="CUI-span-4c">
-                <input type="text" name="demoEmail" class="CUI-input" data-validate="email" placeholder="邮箱">
+                <input type="text" name="demoEmail" class="CUI-input" data-CUI-validate="email" placeholder="邮箱">
             </div>
         </div>
     </div>
-    <pre><code class="language-html">&lt;input type="text" name="idcard" class="CUI-input" data-validate="idcard" data-error="自定义错误信息"&gt;
-&lt;input type="text" name="phone" class="CUI-input" data-validate="phone"&gt;
-&lt;input type="text" name="email" class="CUI-input" data-validate="email"&gt;</code></pre>
+    <pre><code class="language-html">&lt;input type="text" name="idcard" class="CUI-input" data-CUI-validate="idcard" data-error="自定义错误信息"&gt;
+&lt;input type="text" name="phone" class="CUI-input" data-CUI-validate="phone"&gt;
+&lt;input type="text" name="email" class="CUI-input" data-CUI-validate="email"&gt;</code></pre>
 
     <h4>CUI-input-box 验证示例</h4>
     <div class="CUI-box">
         <p>组合框验证时添加 <code>CUI-is-error</code> 类，同时显示 <code>.CUI-input__error &gt; .CUI-message-error</code> 中的错误信息文字：</p>
         <div class="CUI-grid CUI-grid-12c CUI-mt-md CUI-mb-md">
             <div class="CUI-span-4c">
-                <input type="text" name="demoBoxPhone" class="CUI-input-box" data-label="手机号" data-validate="phone" data-hint="请输入11位手机号" data-error="手机号格式不对" placeholder="请输入手机号">
+                <input type="text" name="demoBoxPhone" class="CUI-input-box" data-label="手机号" data-CUI-validate="phone" data-hint="请输入11位手机号" data-error="手机号格式不对" placeholder="请输入手机号">
             </div>
             <div class="CUI-span-4c">
-                <input type="text" name="demoBoxEmail" class="CUI-input-box" data-label="邮箱" data-validate="email" data-hint="输入有效邮箱" data-error="邮箱格式错误" placeholder="请输入邮箱">
+                <input type="text" name="demoBoxEmail" class="CUI-input-box" data-label="邮箱" data-CUI-validate="email" data-hint="输入有效邮箱" data-error="邮箱格式错误" placeholder="请输入邮箱">
             </div>
             <div class="CUI-span-4c">
-                <input type="text" name="demoBoxRequired" class="CUI-input-box" data-label="必填项" data-validate="required" data-hint="此项不能为空" data-error="请填写此项" placeholder="必填">
+                <input type="text" name="demoBoxRequired" class="CUI-input-box" data-label="必填项" data-CUI-validate="required" data-hint="此项不能为空" data-error="请填写此项" placeholder="必填">
             </div>
         </div>
     </div>
-    <pre><code class="language-html">&lt;input type="text" name="phone" class="CUI-input-box" data-label="手机号" data-validate="phone" data-hint="提示文字" data-error="错误信息"&gt;
-&lt;input type="text" name="requiredField" class="CUI-input-box" data-label="必填" data-validate="required" data-hint="必填项" data-error="请填写"&gt;</code></pre>
+    <pre><code class="language-html">&lt;input type="text" name="phone" class="CUI-input-box" data-label="手机号" data-CUI-validate="phone" data-hint="提示文字" data-error="错误信息"&gt;
+&lt;input type="text" name="requiredField" class="CUI-input-box" data-label="必填" data-CUI-validate="required" data-hint="必填项" data-error="请填写"&gt;</code></pre>
 
     <h4>自定义正则验证</h4>
     <div class="CUI-box">
-        <p>使用 <code>data-validate="custom"</code> 搭配 <code>data-validate-pattern</code> 指定正则：</p>
+        <p>使用 <code>data-CUI-validate="custom"</code> 搭配 <code>data-validate-pattern</code> 指定正则：</p>
         <div class="CUI-grid CUI-grid-12c CUI-mt-md CUI-mb-md">
             <div class="CUI-span-4c">
-                <input type="text" name="demoCode" class="CUI-input" data-validate="custom" data-validate-pattern="^\d{6}$" placeholder="6位数字验证码(自定义正则)">
+                <input type="text" name="demoCode" class="CUI-input" data-CUI-validate="custom" data-validate-pattern="^\d{6}$" placeholder="6位数字验证码(自定义正则)">
             </div>
         </div>
     </div>
-    <pre><code class="language-html">&lt;input type="text" name="code" class="CUI-input" data-validate="custom" data-validate-pattern="^\d{6}$" placeholder="6位数字"&gt;</code></pre>
+    <pre><code class="language-html">&lt;input type="text" name="code" class="CUI-input" data-CUI-validate="custom" data-validate-pattern="^\d{6}$" placeholder="6位数字"&gt;</code></pre>
 
     <h4>错误状态 CSS 类</h4>
     <div class="CUI-box">

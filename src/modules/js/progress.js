@@ -22,7 +22,7 @@ class Progress {
         this.progressBar = null;
         this.max = parseInt(this.container.dataset.max) || 100;
         this.value = parseInt(this.container.dataset.value) || 0;
-        this.type = this.container.dataset.type || '';
+        this.type = this.container.dataset.CUIType || '';
         this.size = this.container.dataset.size || 'md';
         this.color = this.container.dataset.color || null;
         
@@ -56,13 +56,13 @@ class Progress {
         
         this.glass = types.includes('glass');
         
-        // 颜色处理：data-color 自定义颜色优先于 data-type 中的颜色类型
+        // 颜色处理：data-color 自定义颜色优先于 data-CUI-type 中的颜色类型
         const colorTypes = ['primary', 'success', 'warning', 'error', 'info'];
         const foundColor = types.find(t => colorTypes.includes(t));
         if (this.color && this.color.startsWith('#')) {
             // 已有 data-color 自定义颜色，保持不变
         } else if (foundColor) {
-            // 使用 data-type 中的颜色
+            // 使用 data-CUI-type 中的颜色
             this.color = foundColor;
         }
         

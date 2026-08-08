@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新组件测试 | Casting UI</title>
+    <link rel="stylesheet" href="/modules/css/core.css">
+    <link rel="stylesheet" href="/modules/css/container.css">
+    <link rel="stylesheet" href="/modules/css/layout.css">
+    <link rel="stylesheet" href="/modules/css/text.css">
+    <link rel="stylesheet" href="/modules/css/header.css">
+    <link rel="stylesheet" href="/modules/css/animation.css">
+    <link rel="stylesheet" href="/modules/css/responsive.css">
+    <link rel="stylesheet" href="/modules/css/components.css">
+    <link rel="stylesheet" href="/modules/css/status.css">
+    <link rel="stylesheet" href="/modules/css/progress.css">
+    <link rel="stylesheet" href="/modules/css/input.css">
+    <link rel="stylesheet" href="/modules/css/form.css">
+    <link rel="stylesheet" href="/modules/css/menu.css">
+    <link rel="stylesheet" href="/modules/css/color-picker.css">
+    <link rel="stylesheet" href="/modules/css/theme-manager.css">
+    <link rel="stylesheet" href="/modules/css/table.css">
+    <style>
+        th:first-child,
+        td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 11;
+            box-shadow: 2px 0px 3px var(--gray-300);
+        }
+
+        thead th {
+            box-shadow: 0px 2px 3px var(--gray-300);
+        }
+
+        th:last-child,
+        td:last-child {
+            position: sticky;
+            right: 0;
+            z-index: 11;
+            box-shadow: -2px 0px 3px var(--gray-300);
+        }
+
+        tfoot th select {
+
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            font-size: 12px;
+            /* 先满足浏览器下限 */
+            display: inline-block;
+            /* scale对内联元素位置容易跑偏 */
+
+            transform-origin: left center;
+            /* 基准点，防止文字右移 */
+            /* display: block; */
+            position: relative;
+            top: 0;
+            left: -10px;
+            color: white;
+            border-radius: 4px;
+            background-color: var(--gray-500);
+            margin: -4px -10px  -4px -2px;
+            padding: 1px;
+            border: none;
+            transform: rotate(-90deg) scale(0.75);
+            transform-origin: center center;
+            
+        }
+    </style>
+</head>
+
+<body class="CUI-container">
+    <div class="CUI-wrap">
+        <header>
+            <div class="CUI-grid  CUI-grid-v-center">
+                <div>
+                    <h2>Casting UI</h2>
+                    <p>Input 新组件测试</p>
+                </div>
+            </div>
+        </header>
+
+        <main class="CUI-content">
+            <section class="CUI-section">
+                <h2>表格组件测试 </h2>
+                <div class="CUI-table-container" style="
+                                                        height: 500px; 
+                                                        overflow:scroll; 
+                                                        width: 100%;
+                                                        height: 20em;
+                                                        
+                                                        ">
+                    <table class="CUI-table" style="table-layout: auto;
+                                                    width: max-content;
+                                                   
+                                                     border-spacing: 0; 
+                                                     border-collapse: separate;
+                                                    ">
+
+                        <thead style="top:0;position: sticky;z-index: 12;">
+                            <tr>
+                                <th>姓名</th>
+                                <th>年龄</th>
+                                <th>性别</th>
+                                <th>操作</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>更新时间</th>
+                                <th>删除</th>
+                                <th>恢复</th>
+                                <th>操作</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                                <th>状态</th>
+                            </tr>
+                            <tr>
+                                <th>姓名2</th>
+                                <th>年龄2</th>
+                                <th>性别2</th>
+                                <th>操作2</th>
+                                <th>状态2</th>
+                                <th>创建时间2</th>
+                                <th>更新时间2</th>
+                                <th>删除2</th>
+                                <th>恢复2</th>
+                                <th>操作2</th>
+                                <th>状态2</th>
+                                <th>操作2</th>
+                                <th>状态2</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+
+                                <td>张三</td>
+
+                                <td>25</td>
+                                <td>男</td>
+                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
+                                <td><span class="CUI-status CUI-status-success">正常</span></td>
+                                <td>2024-01-15 09:30:00</td>
+                                <td>2024-06-20 14:22:10</td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
+                                <td><span class="CUI-status CUI-status-active">启用</span></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
+                                <td><span class="CUI-status CUI-status-online">在线</span></td>
+                            </tr>
+                            <tr>
+                                <td>李四</td>
+                                <td>32</td>
+                                <td>女</td>
+                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
+                                <td><span class="CUI-status CUI-status-success">正常</span></td>
+                                <td>2023-08-22 11:15:30</td>
+                                <td>2024-05-18 09:45:22</td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
+                                <td><span class="CUI-status CUI-status-active">启用</span></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
+                                <td><span class="CUI-status CUI-status-offline">离线</span></td>
+                            </tr>
+                            <tr>
+                                <td>王五</td>
+                                <td>28</td>
+                                <td>男</td>
+                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
+                                <td><span class="CUI-status CUI-status-warning">待审核</span></td>
+                                <td>2024-02-10 16:45:00</td>
+                                <td>2024-06-15 11:30:45</td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
+                                <td><span class="CUI-status CUI-status-pending">待激活</span></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
+                                <td><span class="CUI-status CUI-status-online">在线</span></td>
+                            </tr>
+                            <tr>
+                                <td>赵六</td>
+                                <td>35</td>
+                                <td>女</td>
+                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
+                                <td><span class="CUI-status CUI-status-error">已禁用</span></td>
+                                <td>2022-11-05 08:20:15</td>
+                                <td>2024-04-12 17:10:30</td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary">恢复</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
+                                <td><span class="CUI-status CUI-status-inactive">禁用</span></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
+                                <td><span class="CUI-status CUI-status-offline">离线</span></td>
+                            </tr>
+                            <tr>
+                                <td>钱七</td>
+                                <td>22</td>
+                                <td>男</td>
+                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
+                                <td><span class="CUI-status CUI-status-success">正常</span></td>
+                                <td>2024-05-20 13:00:00</td>
+                                <td>2024-06-22 10:15:20</td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
+                                <td><span class="CUI-status CUI-status-active">启用</span></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
+                                <td><span class="CUI-status CUI-status-online">在线</span></td>
+                            </tr>
+                            <tr>
+                                <td>孙八</td>
+                                <td>29</td>
+                                <td>女</td>
+                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
+                                <td><span class="CUI-status CUI-status-success">正常</span></td>
+                                <td>2023-12-01 10:30:45</td>
+                                <td>2024-06-18 15:40:10</td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
+                                <td><span class="CUI-status CUI-status-active">启用</span></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
+                                <td><span class="CUI-status CUI-status-online">在线</span></td>
+                            </tr>
+                            <tr>
+                                <td>周九</td>
+                                <td>41</td>
+                                <td>男</td>
+                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
+                                <td><span class="CUI-status CUI-status-warning">待审核</span></td>
+                                <td>2023-06-15 09:15:20</td>
+                                <td>2024-05-30 12:25:35</td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
+                                <td><span class="CUI-status CUI-status-pending">待激活</span></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
+                                <td><span class="CUI-status CUI-status-offline">离线</span></td>
+                            </tr>
+                            <tr>
+                                <td>吴十</td>
+                                <td>26</td>
+                                <td>女</td>
+                                <td><button class="CUI-btn CUI-btn-sm">编辑</button></td>
+                                <td><span class="CUI-status CUI-status-success">正常</span></td>
+                                <td>2024-03-08 14:20:30</td>
+                                <td>2024-06-21 08:50:15</td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-danger">删除</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-secondary" disabled>恢复</button></td>
+                                <td><button class="CUI-btn CUI-btn-sm">查看</button></td>
+                                <td><span class="CUI-status CUI-status-active">启用</span></td>
+                                <td><button class="CUI-btn CUI-btn-sm CUI-btn-primary">详情</button></td>
+                                <td><span class="CUI-status CUI-status-offline">离线</span></td>
+                        </tbody>
+                        <tfoot style="bottom:0;position: sticky;z-index: 12;">
+                            <tr>
+                                <th>姓名计数</th>
+                                <th style="text-align:right;">
+                                    <select name="temp1" id="temp1">
+                                        <option value="SUM">SUM</option>
+                                        <option value="AVG">AVG</option>
+                                        <option value="MAX">MAX</option>
+                                        <option value="MIN">MIN</option>
+                                        <option value="CNT">CNT</option>
+                                    </select>
+                                    年龄计数
+                                </th>
+                                <th>性别计数</th>
+                                <th>操作计数</th>
+                                <th>状态计数</th>
+                                <th>创建时间计数</th>
+                                <th>更新时间计数</th>
+                                <th>删除</th>
+                                <th>恢复</th>
+                                <th>操作</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                                <th>状态计数</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="/modules/js/index.js">
+    </script>
+</body>
+
+</html>
